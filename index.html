@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Baby Log">
+<meta name="apple-mobile-web-app-title" content="Activity Log">
 <meta name="theme-color" content="#1a1a2e">
-<title>Baby Log</title>
+<title>Activity Log</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -25,21 +25,18 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 input[type=number],input[type=datetime-local]{font-family:inherit}
 input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 
-.header{text-align:center;padding:16px 0 12px;position:relative}
+.header{text-align:center;padding:16px 0 12px}
 .header h1{font-size:24px;font-weight:800}
-.header p{font-size:13px;color:var(--muted);margin-top:4px}
-.refresh-btn{position:absolute;right:0;top:20px;font-size:20px;color:var(--muted);padding:4px}
-.refresh-btn.spinning{color:var(--diaper);animation:spin 1s linear infinite}
-@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-
-.error{padding:10px;border-radius:10px;background:rgba(231,76,95,.15);border:1px solid rgba(231,76,95,.3);font-size:12px;color:var(--danger);text-align:center;margin-bottom:10px}
-.syncing{text-align:center;padding:8px;font-size:13px;color:var(--diaper)}
+.header .baby-name{font-size:14px;color:var(--breast);margin-top:2px;font-weight:500;letter-spacing:.3px}
+.header .date{font-size:13px;color:var(--muted);margin-top:4px}
+.sync-badge{font-size:11px;color:var(--muted);background:var(--surfaceAlt);padding:3px 10px;border-radius:8px;display:inline-block;margin-top:6px}
+.sync-badge.active{color:var(--diaper)}
 
 .summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 4px;margin-bottom:4px}
 .summary-card{padding:10px 8px;border-radius:12px;text-align:center}
-.summary-card .num{font-size:22px;font-weight:700}
-.summary-card .label{font-size:11px;color:var(--muted)}
-.summary-card .sub{font-size:10px;color:var(--muted);margin-top:2px}
+.summary-card .num{font-size:20px;font-weight:700}
+.summary-card .label{font-size:11px;color:var(--muted);margin-top:1px}
+.summary-card .sub{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.3}
 
 .actions{display:flex;gap:8px;justify-content:center;margin:16px 0}
 .action-btn{flex:1;padding:16px 8px;border-radius:16px;font-size:14px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:6px}
@@ -49,7 +46,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .form-header{display:flex;align-items:center;margin-bottom:16px}
 .back-btn{font-size:15px;color:var(--muted);display:flex;align-items:center;gap:4px;padding:4px 0}
 .form-title{flex:1;text-align:center;font-size:16px;font-weight:700;margin-right:48px}
-.form-row{display:flex;gap:10px;justify-content:center;margin-bottom:16px}
+.form-row{display:flex;gap:10px;justify-content:center;margin-bottom:16px;flex-wrap:wrap}
 
 .pill{padding:10px 20px;border-radius:24px;font-size:16px;font-weight:600;display:flex;align-items:center;gap:6px;border:2px solid transparent}
 .pill.active{border-color:currentColor}
@@ -61,7 +58,6 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 
 .quick-btns{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
 .quick-btn{padding:6px 14px;border-radius:16px;font-size:13px;font-weight:600;background:var(--surfaceAlt);color:var(--muted)}
-.quick-btn.active{color:var(--bottle)}
 
 .time-row{display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:16px}
 .time-row input{padding:8px 12px;border-radius:12px;border:1px solid var(--surfaceAlt);background:var(--surface);color:var(--text);font-size:14px}
@@ -79,6 +75,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .log-entry .sheet-badge{font-size:10px;margin-left:6px}
 .delete-btn{width:28px;height:28px;border-radius:8px;color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center}
 .empty{text-align:center;padding:40px;color:var(--muted);font-size:14px}
+.show-more{display:block;margin:12px auto;padding:10px 24px;border-radius:12px;background:var(--surfaceAlt);color:var(--muted);font-size:14px;font-weight:600}
 </style>
 </head>
 <body>
@@ -90,10 +87,13 @@ const SCRIPT_URL="https://script.google.com/macros/s/AKfycbyKhhzpzd7kcYYuWquEimo
 
 const S={
   logs:JSON.parse(localStorage.getItem("bl-logs")||"[]"),
-  view:"home",form:null,refreshing:false,error:null,saving:false,confirmDel:null
+  form:null,syncing:false,confirmDel:null,
+  showCount:5,
+  pendingWrites:JSON.parse(localStorage.getItem("bl-pending")||"[]")
 };
 
 function save(){localStorage.setItem("bl-logs",JSON.stringify(S.logs))}
+function savePending(){localStorage.setItem("bl-pending",JSON.stringify(S.pendingWrites))}
 function toDate(d){return `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`}
 function toTime(d){const h=d.getHours(),m=d.getMinutes().toString().padStart(2,"0");return `${h%12||12}:${m} ${h>=12?"PM":"AM"}`}
 function toISO(d){return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16)}
@@ -113,6 +113,11 @@ function timeSince(ds,ts){
   }catch{return "";}
 }
 
+function shortTime(ds,ts){
+  if(!ts||!ds)return "";
+  return ts+" · "+timeSince(ds,ts);
+}
+
 function classify(e){
   if(e.pee||e.poop)return "diaper";
   if(e.breastLength)return "breast";
@@ -121,48 +126,73 @@ function classify(e){
   return "other";
 }
 
-async function fetchSheet(){
-  S.refreshing=true;S.error=null;render();
+function parseEntryDate(e){
+  if(!e.date||!e.time)return 0;
+  try{
+    const tp=e.time.match(/(\d+):(\d+)\s*(AM|PM)?/i);if(!tp)return 0;
+    let h=+tp[1];const m=+tp[2],ap=(tp[3]||"").toUpperCase();
+    if(ap==="PM"&&h!==12)h+=12;if(ap==="AM"&&h===12)h=0;
+    const dp=e.date.split("/");if(dp.length!==3)return 0;
+    return new Date(+dp[2],+dp[0]-1,+dp[1],h,m).getTime();
+  }catch{return 0;}
+}
+
+function sortLogs(){S.logs.sort((a,b)=>parseEntryDate(b)-parseEntryDate(a));}
+
+async function syncFromSheet(){
+  S.syncing=true;render();
   try{
     const r=await fetch(SCRIPT_URL);
     if(!r.ok)throw new Error("HTTP "+r.status);
     const data=await r.json();
-    const entries=data.map(row=>({
-      date:row["Today's Date"]||"",time:row["Time of Day"]||"",
-      breastLength:row["Length of Breast Feeding"]||"",
-      formulaAmount:row["Formula Amount"]||"",breastMilkAmount:row["Breast Milk Amount"]||"",
-      side:row["Right Side/Left Side"]||"",pee:row["Pee"]||"",poop:row["Poop"]||"",
-      fromSheet:true,id:"s-"+Math.random().toString(36).slice(2,8)
-    }));
-    entries.forEach(e=>e.displayType=classify(e));
-    // Replace sheet entries, keep local
+    const entries=data.map(row=>{
+      const e={
+        date:row["Today's Date"]||"",time:row["Time of Day"]||"",
+        breastLength:row["Length of Breast Feeding"]||"",
+        formulaAmount:row["Formula Amount"]||"",breastMilkAmount:row["Breast Milk Amount"]||"",
+        side:row["Right Side/Left Side"]||"",pee:row["Pee"]||"",poop:row["Poop"]||"",
+        fromSheet:true,id:"s-"+Math.random().toString(36).slice(2,8)
+      };
+      if(e.date.includes("1899"))e.date="";
+      if(e.time.includes("1899"))e.time="";
+      e.displayType=classify(e);
+      return e;
+    }).filter(e=>e.date||e.time);
     const local=S.logs.filter(l=>!l.fromSheet);
     S.logs=[...local,...entries];
-    S.logs.sort((a,b)=>new Date(`${b.date} ${b.time}`)-new Date(`${a.date} ${a.time}`));
-    save();
-  }catch(e){S.error=e.message;}
-  S.refreshing=false;render();
+    sortLogs();save();
+  }catch(e){console.error("Sync error:",e);}
+  S.syncing=false;render();
 }
 
-async function addToSheet(entry){
-  try{
-    const p=new URLSearchParams({
-      action:"add",date:entry.date||"",timeOfDay:entry.time||"",
-      breastLength:entry.breastLength||"",formulaAmount:entry.formulaAmount||"",
-      breastMilkAmount:entry.breastMilkAmount||"",side:entry.side||"",
-      pee:entry.pee||"",poop:entry.poop||""
-    });
-    await fetch(SCRIPT_URL+"?"+p.toString());
-  }catch(e){console.error("Sheet write:",e);}
+async function writeToSheet(entry){
+  S.pendingWrites.push(entry);savePending();render();
+  flushPending();
+}
+
+async function flushPending(){
+  while(S.pendingWrites.length>0){
+    const entry=S.pendingWrites[0];
+    try{
+      const p=new URLSearchParams({
+        action:"add",date:entry.date||"",timeOfDay:entry.time||"",
+        breastLength:entry.breastLength||"",formulaAmount:entry.formulaAmount||"",
+        breastMilkAmount:entry.breastMilkAmount||"",side:entry.side||"",
+        pee:entry.pee||"",poop:entry.poop||""
+      });
+      const r=await fetch(SCRIPT_URL+"?"+p.toString());
+      if(r.ok){S.pendingWrites.shift();savePending();render();}
+      else break;
+    }catch(e){console.error("Write error:",e);break;}
+  }
 }
 
 function addEntry(entry){
   entry.displayType=classify(entry);
   entry.id=Date.now().toString();
   S.logs.unshift(entry);
-  S.logs.sort((a,b)=>new Date(`${b.date} ${b.time}`)-new Date(`${a.date} ${a.time}`));
-  save();S.form=null;render();
-  addToSheet(entry);
+  sortLogs();save();S.form=null;render();
+  writeToSheet(entry);
 }
 
 function deleteEntry(id){
@@ -171,31 +201,53 @@ function deleteEntry(id){
 
 function renderSummary(){
   const today=toDate(new Date());
-  const t=S.logs.filter(l=>l.date===today);
+  const all=S.logs;
+  const t=all.filter(l=>l.date===today);
+
+  // DIAPER: count today, show last pee and last poop with emoji + time
   const diapers=t.filter(l=>l.displayType==="diaper").length;
-  const poops=t.filter(l=>l.poop).length;
-  const breastMin=t.filter(l=>l.displayType==="breast").reduce((s,l)=>{const m=(l.breastLength||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);
-  const bEntries=t.filter(l=>l.displayType==="breast").length;
-  const fMl=t.filter(l=>l.displayType==="formula").reduce((s,l)=>{const m=(l.formulaAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);
-  const bmMl=t.filter(l=>l.displayType==="breastmilk").reduce((s,l)=>{const m=(l.breastMilkAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);
-  const feeds=t.filter(l=>l.displayType!=="diaper").length;
-  const lastD=t.filter(l=>l.displayType==="diaper").sort((a,b)=>new Date(`${b.date} ${b.time}`)-new Date(`${a.date} ${a.time}`))[0];
-  const lastF=t.filter(l=>l.displayType!=="diaper"&&l.displayType!=="other").sort((a,b)=>new Date(`${b.date} ${b.time}`)-new Date(`${a.date} ${a.time}`))[0];
+  const lastPee=all.filter(l=>l.pee).sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
+  const lastPoop=all.filter(l=>l.poop).sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
+  let diaperSub="";
+  if(lastPee)diaperSub+=`💧 ${shortTime(lastPee.date,lastPee.time)}`;
+  if(lastPee&&lastPoop)diaperSub+=`<br>`;
+  if(lastPoop)diaperSub+=`💩 ${shortTime(lastPoop.date,lastPoop.time)}`;
+
+  // NURSE: show last side as big text, last nursing time as sub
+  const lastNurse=all.filter(l=>l.displayType==="breast").sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
+  const nurseBig=lastNurse?(lastNurse.side||"?"):"—";
+  let nurseSub="";
+  if(lastNurse)nurseSub=`${lastNurse.breastLength}<br>${shortTime(lastNurse.date,lastNurse.time)}`;
+
+  // BOTTLE: today's total mL as big, last feed amount + time as sub
+  const todayBottle=t.filter(l=>l.displayType==="formula"||l.displayType==="breastmilk");
+  const totalMl=todayBottle.reduce((s,l)=>{
+    const m=(l.formulaAmount||l.breastMilkAmount||"").match(/(\d+)/);
+    return s+(m?+m[1]:0);
+  },0);
+  const lastBottle=all.filter(l=>l.displayType==="formula"||l.displayType==="breastmilk").sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
+  let bottleSub="";
+  if(lastBottle){
+    const amt=lastBottle.formulaAmount||lastBottle.breastMilkAmount||"";
+    bottleSub=`Last: ${amt}<br>${shortTime(lastBottle.date,lastBottle.time)}`;
+  }
+
   return `<div class="summary">
-    <div class="summary-card" style="background:var(--diaperBg)"><div class="num" style="color:var(--diaper)">${diapers}</div><div class="label">diapers (${poops} 💩)</div>${lastD?`<div class="sub">last ${timeSince(lastD.date,lastD.time)}</div>`:""}</div>
-    <div class="summary-card" style="background:var(--breastBg)"><div class="num" style="color:var(--breast)">${breastMin}</div><div class="label">min nursing</div>${lastF?`<div class="sub">fed ${timeSince(lastF.date,lastF.time)}</div>`:`<div class="sub">${bEntries} sessions</div>`}</div>
-    <div class="summary-card" style="background:var(--bottleBg)"><div class="num" style="color:var(--bottle)">${fMl+bmMl}</div><div class="label">mL bottle</div><div class="sub">${feeds} feeds</div></div>
+    <div class="summary-card" style="background:var(--diaperBg)"><div class="num" style="color:var(--diaper)">${diapers}</div><div class="label">diapers today</div>${diaperSub?`<div class="sub">${diaperSub}</div>`:""}</div>
+    <div class="summary-card" style="background:var(--breastBg)"><div class="num" style="color:var(--breast)">${nurseBig}</div><div class="label">last side</div>${nurseSub?`<div class="sub">${nurseSub}</div>`:""}</div>
+    <div class="summary-card" style="background:var(--bottleBg)"><div class="num" style="color:var(--bottle)">${totalMl}<span style="font-size:12px"> mL</span></div><div class="label">today</div>${bottleSub?`<div class="sub">${bottleSub}</div>`:""}</div>
   </div>`;
 }
 
-function renderEntry(e,i){
-  const cm={diaper:{a:"var(--diaper)",b:"var(--diaperBg)"},breast:{a:"var(--breast)",b:"var(--breastBg)"},formula:{a:"var(--bottle)",b:"var(--bottleBg)"},breastmilk:{a:"var(--breastmilk)",b:"var(--breastmilkBg)"}};
-  const c=cm[e.displayType]||cm.diaper;
+function renderEntry(e){
+  const cm={diaper:{a:"var(--diaper)",b:"var(--diaperBg)"},breast:{a:"var(--breast)",b:"var(--breastBg)"},formula:{a:"var(--bottle)",b:"var(--bottleBg)"},breastmilk:{a:"var(--breastmilk)",b:"var(--breastmilkBg)"},other:{a:"var(--muted)",b:"var(--surfaceAlt)"}};
+  const c=cm[e.displayType]||cm.other;
   let sum="";
   if(e.displayType==="diaper"){const p=[];if(e.pee)p.push("💧 Pee");if(e.poop)p.push("💩 Poop");sum=p.join("  +  ");}
   else if(e.displayType==="breast")sum=`🤱 ${e.side||"?"} · ${e.breastLength}`;
   else if(e.displayType==="formula")sum=`🍼 Formula · ${e.formulaAmount}`;
   else if(e.displayType==="breastmilk")sum=`🍼 Breast Milk · ${e.breastMilkAmount}`;
+  else sum=`📝 Feeding`;
   const since=timeSince(e.date,e.time);
   const badge=e.fromSheet?'<span class="sheet-badge">📊</span>':"";
   const del=e.fromSheet?"":`<button class="delete-btn" onclick="handleDel('${e.id}')">✕</button>`;
@@ -211,27 +263,29 @@ function renderForm(){
     <div class="btn-row"><button class="cancel-btn" onclick="S.form=null;render()">Cancel</button><button class="save-btn" style="background:var(--diaper);color:#1a1a2e" onclick="saveDiaper()">Save</button></div></div>`;
   if(S.form==="breast")return `<div class="form-card" style="border:1px solid rgba(167,139,250,.2)">
     <div class="form-header"><button class="back-btn" onclick="S.form=null;render()"><span style="font-size:18px">‹</span> Back</button><div class="form-title" style="color:var(--breast)">🤱 Breastfeed</div></div>
-    <div class="form-row"><button class="pill active" id="left-btn" onclick="pickSide('Left')" style="color:var(--breast);border-color:var(--breast);background:rgba(167,139,250,.13)">◀ Left</button><button class="pill" id="right-btn" onclick="pickSide('Right')" style="background:var(--surfaceAlt);color:var(--muted)">▶ Right</button></div>
-    <div class="stepper"><button onclick="stepMin(-1)">−</button><input type="number" id="f-mins" value="10"><span class="unit">min</span><button onclick="stepMin(1)">+</button></div>
+    <div class="form-row"><button class="pill active" id="left-btn" onclick="pickSide('Left')" style="color:var(--breast);border-color:var(--breast);background:rgba(167,139,250,.13)">◀ Left</button><button class="pill" id="both-btn" onclick="pickSide('Both')" style="background:var(--surfaceAlt);color:var(--muted)">Both</button><button class="pill" id="right-btn" onclick="pickSide('Right')" style="background:var(--surfaceAlt);color:var(--muted)">▶ Right</button></div>
+    <div class="stepper"><button onclick="stepMin(-1)">−</button><input type="number" id="f-mins" value="15"><span class="unit">min</span><button onclick="stepMin(1)">+</button></div>
+    <div class="quick-btns"><button class="quick-btn" onclick="setMin(5)">5 min</button><button class="quick-btn" onclick="setMin(15)">15 min</button><button class="quick-btn" onclick="setMin(20)">20 min</button></div>
     <div class="time-row">🕐 <input type="datetime-local" id="f-time" value="${iso}"></div>
     <div class="btn-row"><button class="cancel-btn" onclick="S.form=null;render()">Cancel</button><button class="save-btn" style="background:var(--breast);color:#1a1a2e" onclick="saveBreast()">Save</button></div></div>`;
   if(S.form==="bottle")return `<div class="form-card" style="border:1px solid rgba(96,197,241,.2)">
     <div class="form-header"><button class="back-btn" onclick="S.form=null;render()"><span style="font-size:18px">‹</span> Back</button><div class="form-title" style="color:var(--bottle)">🍼 Bottle</div></div>
-    <div class="form-row"><button class="pill active" id="formula-btn" onclick="pickBottle('formula')" style="color:var(--formula);border-color:var(--formula);background:rgba(96,197,241,.13)">Formula</button><button class="pill" id="bm-btn" onclick="pickBottle('breastmilk')" style="background:var(--surfaceAlt);color:var(--muted)">Breast Milk</button></div>
+    <div class="form-row"><button class="pill active" id="bm-btn" onclick="pickBottle('breastmilk')" style="color:var(--breastmilk);border-color:var(--breastmilk);background:rgba(249,168,212,.13)">Breast Milk</button><button class="pill" id="formula-btn" onclick="pickBottle('formula')" style="background:var(--surfaceAlt);color:var(--muted)">Formula</button></div>
     <div class="stepper"><button onclick="stepMl(-1)">−</button><input type="number" id="f-ml" value="4"><span class="unit">mL</span><button onclick="stepMl(1)">+</button></div>
     <div class="quick-btns"><button class="quick-btn" onclick="setMl(3)">3mL</button><button class="quick-btn" onclick="setMl(5)">5mL</button><button class="quick-btn" onclick="setMl(6)">6mL</button></div>
     <div class="time-row">🕐 <input type="datetime-local" id="f-time" value="${iso}"></div>
-    <div class="btn-row"><button class="cancel-btn" onclick="S.form=null;render()">Cancel</button><button class="save-btn" id="bottle-save" style="background:var(--bottle);color:#1a1a2e" onclick="saveBottle()">Save</button></div></div>`;
+    <div class="btn-row"><button class="cancel-btn" onclick="S.form=null;render()">Cancel</button><button class="save-btn" id="bottle-save" style="background:var(--breastmilk);color:#1a1a2e" onclick="saveBottle()">Save</button></div></div>`;
   return "";
 }
 
 function render(){
   const app=document.getElementById("app");
-  let h=`<div class="header"><h1>Baby Log 👶</h1><p>${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}</p>
-    <button class="refresh-btn ${S.refreshing?"spinning":""}" onclick="fetchSheet()">↻</button></div>`;
-  if(S.error)h+=`<div class="error">${S.error}</div>`;
-  if(S.refreshing)h+=`<div class="syncing">Loading from Google Sheet...</div>`;
+  const syncStatus=S.syncing?"Syncing...":S.pendingWrites.length>0?`${S.pendingWrites.length} pending upload`:"Synced with Sheet";
+  let h=`<div class="header"><h1>Activity Log 👶</h1><div class="baby-name">Alaiya Maeve Querubin</div><div class="date">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}</div>
+    <span class="sync-badge ${S.syncing?"active":""}">${S.syncing?"⟳ ":"📊 "}${syncStatus}</span></div>`;
+
   if(S.logs.length>0)h+=renderSummary();
+  
   if(!S.form){
     h+=`<div class="actions">
       <button class="action-btn" style="border:2px solid rgba(244,162,97,.2);background:var(--diaperBg);color:var(--diaper)" onclick="S.form='diaper';render()"><span class="icon">🧷</span>Diaper</button>
@@ -239,14 +293,21 @@ function render(){
       <button class="action-btn" style="border:2px solid rgba(96,197,241,.2);background:var(--bottleBg);color:var(--bottle)" onclick="S.form='bottle';render()"><span class="icon">🍼</span>Bottle</button>
     </div>`;
   }else{h+=renderForm();}
+  
   h+=`<div class="history-header">History (${S.logs.length})</div>`;
-  if(S.logs.length===0&&!S.refreshing)h+=`<div class="empty">No logs yet — tap a button above or hit ↻ to sync</div>`;
-  else S.logs.forEach((e,i)=>{h+=renderEntry(e,i);});
+  if(S.logs.length===0&&!S.syncing)h+=`<div class="empty">No logs yet — tap a button above to start</div>`;
+  else{
+    const visible=S.logs.slice(0,S.showCount);
+    visible.forEach(e=>{h+=renderEntry(e);});
+    if(S.logs.length>S.showCount){
+      const remaining=S.logs.length-S.showCount;
+      h+=`<button class="show-more" onclick="showMore()">Show more (${remaining} older)</button>`;
+    }
+  }
   app.innerHTML=h;
 }
 
-// Form state
-let formPee=false,formPoop=false,formSide="Left",formBottleType="formula";
+let formPee=false,formPoop=false,formSide="Left",formBottleType="breastmilk";
 
 function togglePill(type){
   if(type==="pee"){formPee=!formPee;const b=document.getElementById("pee-btn");b.style.background=formPee?"rgba(240,213,110,.13)":"var(--surfaceAlt)";b.style.color=formPee?"var(--pee)":"var(--muted)";b.style.borderColor=formPee?"var(--pee)":"transparent";b.className=formPee?"pill active":"pill";}
@@ -254,21 +315,23 @@ function togglePill(type){
 }
 function pickSide(s){
   formSide=s;
-  const lb=document.getElementById("left-btn"),rb=document.getElementById("right-btn");
-  lb.className=s==="Left"?"pill active":"pill";lb.style.color=s==="Left"?"var(--breast)":"var(--muted)";lb.style.borderColor=s==="Left"?"var(--breast)":"transparent";lb.style.background=s==="Left"?"rgba(167,139,250,.13)":"var(--surfaceAlt)";
-  rb.className=s==="Right"?"pill active":"pill";rb.style.color=s==="Right"?"var(--breast)":"var(--muted)";rb.style.borderColor=s==="Right"?"var(--breast)":"transparent";rb.style.background=s==="Right"?"rgba(167,139,250,.13)":"var(--surfaceAlt)";
+  const lb=document.getElementById("left-btn"),rb=document.getElementById("right-btn"),bb=document.getElementById("both-btn");
+  [lb,rb,bb].forEach(b=>{b.className="pill";b.style.color="var(--muted)";b.style.borderColor="transparent";b.style.background="var(--surfaceAlt)";});
+  const active=s==="Left"?lb:s==="Right"?rb:bb;
+  active.className="pill active";active.style.color="var(--breast)";active.style.borderColor="var(--breast)";active.style.background="rgba(167,139,250,.13)";
 }
 function pickBottle(t){
   formBottleType=t;
   const fb=document.getElementById("formula-btn"),bb=document.getElementById("bm-btn"),sv=document.getElementById("bottle-save");
-  const c=t==="formula"?"var(--formula)":"var(--breastmilk)";
   fb.className=t==="formula"?"pill active":"pill";fb.style.color=t==="formula"?"var(--formula)":"var(--muted)";fb.style.borderColor=t==="formula"?"var(--formula)":"transparent";fb.style.background=t==="formula"?"rgba(96,197,241,.13)":"var(--surfaceAlt)";
-  bb.className=t==="breastmilk"?"pill active":"pill";bb.style.color=t==="breastmilk"?"var(--breastmilk)":"var(--muted)";bb.style.borderColor=t==="breastmilk"?"var(--breastmilk)":"transparent";bb.style.background=t==="breastmilk"?"rgba(249,168,212,.13)":"var(--surfaceAlt)";
-  sv.style.background=c;
+  bb.className=t==="breastmilk"?"pill active":"pill";bb.style.color=t==="breastmilk"?"var(--breastmilk)":"var(--muted)";bb.style.borderColor=t==="breastmilk"?"rgba(249,168,212,1)":"transparent";bb.style.background=t==="breastmilk"?"rgba(249,168,212,.13)":"var(--surfaceAlt)";
+  sv.style.background=t==="formula"?"var(--formula)":"var(--breastmilk)";
 }
 function stepMin(d){const i=document.getElementById("f-mins");i.value=Math.max(1,Math.min(120,(+i.value||0)+d));}
 function stepMl(d){const i=document.getElementById("f-ml");i.value=Math.max(1,Math.min(500,(+i.value||0)+d));}
 function setMl(v){document.getElementById("f-ml").value=v;}
+function setMin(v){document.getElementById("f-mins").value=v;}
+function showMore(){S.showCount+=10;render();}
 
 function saveDiaper(){
   if(!formPee&&!formPoop)return;
@@ -286,7 +349,7 @@ function saveBottle(){
   const ml=document.getElementById("f-ml").value;
   const d=new Date(document.getElementById("f-time").value);
   addEntry({date:toDate(d),time:toTime(d),formulaAmount:formBottleType==="formula"?ml+" mL":"",breastMilkAmount:formBottleType==="breastmilk"?ml+" mL":""});
-  formBottleType="formula";
+  formBottleType="breastmilk";
 }
 
 function handleDel(id){
@@ -294,10 +357,9 @@ function handleDel(id){
   else{S.confirmDel=id;render();setTimeout(()=>{if(S.confirmDel===id){S.confirmDel=null;render();}},3000);}
 }
 
-// Init
 render();
-// Auto-refresh on load
-fetchSheet();
+syncFromSheet();
+if(S.pendingWrites.length>0)flushPending();
 </script>
 </body>
 </html>
