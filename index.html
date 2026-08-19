@@ -126,14 +126,45 @@ function shortTime(ds,ts){return ts&&ds?ts+" · "+timeSince(ds,ts):"";}
 function classify(e){if(e.pee||e.poop)return "diaper";if(e.breastLength)return "breast";if(e.formulaAmount)return "formula";if(e.breastMilkAmount)return "breastmilk";if(e.pumpAmount)return "pump";return "other";}
 function parseEntryDate(e){if(!e.date||!e.time)return 0;try{const tp=e.time.match(/(\d+):(\d+)\s*(AM|PM)?/i);if(!tp)return 0;let h=+tp[1];const m=+tp[2],ap=(tp[3]||"").toUpperCase();if(ap==="PM"&&h!==12)h+=12;if(ap==="AM"&&h===12)h=0;const dp=e.date.split("/");if(dp.length!==3)return 0;return new Date(+dp[2],+dp[0]-1,+dp[1],h,m).getTime();}catch{return 0;}}
 function sortLogs(){S.logs.sort((a,b)=>parseEntryDate(b)-parseEntryDate(a));}
+function dedupKey(e){
+  // Normalize: strip spaces, lowercase, just core identity
+  const d=(e.date||"").trim();
+  const t=(e.time||"").replace(/\s+/g," ").trim();
+  const tp=e.displayType||classify(e);
+  return [d,t,tp].join("|");
+}
+function dedup(){
+  // Keep first occurrence (newest by sort position), remove later dupes
+  const seen=new Map();
+  const keep=[];
+  for(const e of S.logs){
+    const k=dedupKey(e);
+    if(!seen.has(k)){seen.set(k,e);keep.push(e);}
+    else{
+      // Keep the one that's synced/fromSheet over the local one
+      const existing=seen.get(k);
+      if(!existing.synced&&!existing.fromSheet&&(e.synced||e.fromSheet)){
+        // Replace the kept one with this synced version
+        const idx=keep.indexOf(existing);
+        if(idx>=0){keep[idx]=e;seen.set(k,e);}
+      }
+      // Otherwise discard this duplicate
+    }
+  }
+  S.logs=keep;
+}
 async function syncFromSheet(){S.syncing=true;render();try{const r=await fetch(SCRIPT_URL);if(!r.ok)throw 0;const data=await r.json();const sheetEntries=data.map(row=>{const e={date:row["Today's Date"]||"",time:row["Time of Day"]||"",breastLength:row["Length of Breast Feeding"]||"",formulaAmount:row["Formula Amount"]||"",breastMilkAmount:row["Breast Milk Amount"]||"",side:row["Right Side/Left Side"]||"",pee:row["Pee"]||"",poop:row["Poop"]||"",pumpAmount:row["Pump Amount"]||""};if(e.date.includes("1899"))e.date="";if(e.time.includes("1899"))e.time="";e.displayType=classify(e);return e;}).filter(e=>e.date||e.time);
-const eKey=e=>[e.date,e.time,e.displayType,e.breastLength,e.formulaAmount,e.breastMilkAmount,e.pumpAmount,e.pee,e.poop,e.side].join("|");
-const sheetKeys=new Set(sheetEntries.map(eKey));
+// Mark local entries as synced if they match a sheet entry
+const sheetKeys=new Map();
+sheetEntries.forEach(se=>{const k=dedupKey(se);sheetKeys.set(k,(sheetKeys.get(k)||0)+1);});
 const localOnly=S.logs.filter(l=>!l.fromSheet);
-localOnly.forEach(l=>{if(sheetKeys.has(eKey(l))){l.synced=true;sheetKeys.delete(eKey(l));}});
-const usedKeys=new Set(localOnly.filter(l=>l.synced).map(eKey));
-const newFromSheet=sheetEntries.filter(e=>{const k=eKey(e);if(usedKeys.has(k)){usedKeys.delete(k);return false;}return true;}).map(e=>({...e,fromSheet:true,synced:true,id:"s-"+Math.random().toString(36).slice(2,8)}));
-S.logs=[...localOnly,...newFromSheet];sortLogs();save();}catch(e){console.error("Sync:",e);}S.syncing=false;render();}
+const matchedKeys=new Map();
+localOnly.forEach(l=>{const k=dedupKey(l);const avail=(sheetKeys.get(k)||0)-(matchedKeys.get(k)||0);if(avail>0){l.synced=true;matchedKeys.set(k,(matchedKeys.get(k)||0)+1);}});
+// Only add sheet entries that weren't matched to a local entry
+const newFromSheet=[];
+const usedCounts=new Map();
+sheetEntries.forEach(se=>{const k=dedupKey(se);const localMatched=matchedKeys.get(k)||0;const usedSoFar=usedCounts.get(k)||0;if(usedSoFar<localMatched){usedCounts.set(k,usedSoFar+1);}else{newFromSheet.push({...se,fromSheet:true,synced:true,id:"s-"+Math.random().toString(36).slice(2,8)});}});
+S.logs=[...localOnly,...newFromSheet];sortLogs();dedup();save();}catch(e){console.error("Sync:",e);}S.syncing=false;render();}
 async function writeToSheet(entry){S.pendingWrites.push(entry);savePending();render();flushPending();}
 async function flushPending(){while(S.pendingWrites.length>0){const entry=S.pendingWrites[0];try{const p=new URLSearchParams({action:"add",date:entry.date||"",timeOfDay:entry.time||"",breastLength:entry.breastLength||"",formulaAmount:entry.formulaAmount||"",breastMilkAmount:entry.breastMilkAmount||"",side:entry.side||"",pee:entry.pee||"",poop:entry.poop||"",pumpAmount:entry.pumpAmount||""});const r=await fetch(SCRIPT_URL+"?"+p.toString());if(r.ok){S.pendingWrites.shift();savePending();render();}else break;}catch{break;}}}
 function addEntry(entry){entry.displayType=classify(entry);entry.id=Date.now().toString();S.logs.unshift(entry);sortLogs();save();S.form=null;render();writeToSheet(entry);}
@@ -248,13 +279,12 @@ async function resyncEntry(id){S.ctxMenu=null;const e=S.logs.find(l=>l.id===id);
     const r=await fetch(SCRIPT_URL);
     if(!r.ok)throw new Error("fetch failed");
     const data=await r.json();
-    const eKey=x=>[x.date||"",x.time||"",x.displayType||classify(x)].join("|");
-    const myKey=eKey(e);
     const sheetEntries=data.map(row=>{
       const s={date:row["Today's Date"]||"",time:row["Time of Day"]||"",breastLength:row["Length of Breast Feeding"]||"",formulaAmount:row["Formula Amount"]||"",breastMilkAmount:row["Breast Milk Amount"]||"",side:row["Right Side/Left Side"]||"",pee:row["Pee"]||"",poop:row["Poop"]||"",pumpAmount:row["Pump Amount"]||""};
       if(s.date.includes("1899"))s.date="";if(s.time.includes("1899"))s.time="";s.displayType=classify(s);return s;
     });
-    const found=sheetEntries.some(s=>eKey(s)===myKey);
+    const myKey=dedupKey(e);
+    const found=sheetEntries.some(s=>dedupKey(s)===myKey);
     if(found){e.synced=true;}
     else{
       const p=new URLSearchParams({action:"add",date:e.date||"",timeOfDay:e.time||"",breastLength:e.breastLength||"",formulaAmount:e.formulaAmount||"",breastMilkAmount:e.breastMilkAmount||"",side:e.side||"",pee:e.pee||"",poop:e.poop||"",pumpAmount:e.pumpAmount||""});
@@ -262,7 +292,7 @@ async function resyncEntry(id){S.ctxMenu=null;const e=S.logs.find(l=>l.id===id);
       if(wr.ok){e.synced=true;}
     }
   }catch(err){console.error("Resync:",err);}
-  e.resyncing=false;save();render();}
+  e.resyncing=false;dedup();save();render();}
 
 function renderForm(){const iso=S.editTime||toISO(new Date());const isEdit=!!S.editId;const editLabel=isEdit?"Update":"Save";
   if(S.form==="diaper")return `<div class="form-card"><div class="form-header"><button class="back-btn" onclick="cancelForm()">‹ Back</button><div class="form-title" style="color:var(--diaper-fg)">${isEdit?"Edit ":""}Diaper</div></div><div class="form-row"><button class="pill${formPee?" on":""}" id="pee-btn" onclick="togglePill('pee')" style="background:${formPee?"#f0fae1":"#eee7db"};color:${formPee?"var(--accent2)":"var(--muted)"};border-color:${formPee?"var(--accent2)":"transparent"}">💧 Pee</button><button class="pill${formPoop?" on":""}" id="poop-btn" onclick="togglePill('poop')" style="background:${formPoop?"var(--diaper-bg)":"#eee7db"};color:${formPoop?"var(--diaper-fg)":"var(--muted)"};border-color:${formPoop?"var(--diaper-accent)":"transparent"}">💩 Poop</button></div><div class="time-row"><input type="datetime-local" id="f-time" value="${iso}"></div><div class="btn-row"><button class="cancel-btn" onclick="cancelForm()">Cancel</button><button class="save-btn" style="background:var(--diaper-accent)" onclick="saveDiaper()">${editLabel}</button></div></div>`;
