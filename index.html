@@ -1,99 +1,300 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Activity Log">
-<meta name="theme-color" content="#1a1a2e">
-<title>Activity Log</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-:root{
-  --bg:#1a1a2e;--surface:#222244;--surfaceAlt:#2a2a4e;
-  --text:#e8e6f0;--muted:#9896a8;
-  --diaper:#f4a261;--diaperBg:#3d2e1a;
-  --breast:#a78bfa;--breastBg:#2a2240;
-  --bottle:#60c5f1;--bottleBg:#1a2e3d;
-  --formula:#60c5f1;--breastmilk:#f9a8d4;--breastmilkBg:#3d1a2e;
-  --poop:#c47f3c;--pee:#f0d56e;
-  --danger:#e74c5f;--success:#4ade80;
-}
-body{background:var(--bg);color:var(--text);font-family:-apple-system,system-ui,sans-serif;min-height:100vh;min-height:100dvh;padding:env(safe-area-inset-top) 16px 100px;max-width:480px;margin:0 auto;overscroll-behavior:none}
-button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
-input[type=number],input[type=datetime-local]{font-family:inherit}
-input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
-
-.header{text-align:center;padding:16px 0 12px}
-.header h1{font-size:24px;font-weight:800}
-.header .baby-name{font-size:14px;color:var(--breast);margin-top:2px;font-weight:500;letter-spacing:.3px}
-.header .date{font-size:13px;color:var(--muted);margin-top:4px}
-.sync-badge{font-size:11px;color:var(--muted);background:var(--surfaceAlt);padding:3px 10px;border-radius:8px;display:inline-block;margin-top:6px}
-.sync-badge.active{color:var(--diaper)}
-
-.summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 4px;margin-bottom:4px}
-.summary-card{padding:10px 8px;border-radius:12px;text-align:center}
-.summary-card .num{font-size:20px;font-weight:700}
-.summary-card .label{font-size:11px;color:var(--muted);margin-top:1px}
-.summary-card .sub{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.3}
-
-.actions{display:flex;gap:8px;justify-content:center;margin:16px 0}
-.action-btn{flex:1;padding:16px 8px;border-radius:16px;font-size:14px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:6px}
-.action-btn .icon{font-size:28px}
-
-.form-card{margin:16px 0;padding:20px;border-radius:20px;background:var(--surface)}
-.form-header{display:flex;align-items:center;margin-bottom:16px}
-.back-btn{font-size:15px;color:var(--muted);display:flex;align-items:center;gap:4px;padding:4px 0}
-.form-title{flex:1;text-align:center;font-size:16px;font-weight:700;margin-right:48px}
-.form-row{display:flex;gap:10px;justify-content:center;margin-bottom:16px;flex-wrap:wrap}
-
-.pill{padding:10px 20px;border-radius:24px;font-size:16px;font-weight:600;display:flex;align-items:center;gap:6px;border:2px solid transparent}
-.pill.active{border-color:currentColor}
-
-.stepper{display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:16px}
-.stepper button{width:40px;height:40px;border-radius:12px;background:var(--surfaceAlt);color:var(--text);font-size:20px;display:flex;align-items:center;justify-content:center}
-.stepper input{width:64px;text-align:center;padding:8px 4px;border-radius:12px;background:var(--surface);color:var(--text);font-size:20px;font-weight:700;border:2px solid var(--surfaceAlt)}
-.stepper .unit{color:var(--muted);font-size:14px}
-
-.quick-btns{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
-.quick-btn{padding:6px 14px;border-radius:16px;font-size:13px;font-weight:600;background:var(--surfaceAlt);color:var(--muted)}
-
-.time-row{display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:16px}
-.time-row input{padding:8px 12px;border-radius:12px;border:1px solid var(--surfaceAlt);background:var(--surface);color:var(--text);font-size:14px}
-
-.btn-row{display:flex;gap:10px;justify-content:center}
-.cancel-btn{padding:12px 24px;border-radius:14px;background:var(--surfaceAlt);color:var(--muted);font-size:15px}
-.save-btn{padding:12px 32px;border-radius:14px;font-size:15px;font-weight:700}
-.save-btn:disabled{background:var(--surfaceAlt);color:var(--muted)}
-
-.history-header{margin:16px 0 10px 4px;font-size:15px;font-weight:700;color:var(--muted)}
-.log-entry{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;margin-bottom:6px;border-left:3px solid}
-.log-entry .info{flex:1}
-.log-entry .summary-text{font-size:15px;font-weight:500}
-.log-entry .time-text{font-size:12px;color:var(--muted);margin-top:3px}
-.log-entry .sheet-badge{font-size:10px;margin-left:6px}
-.delete-btn{width:28px;height:28px;border-radius:8px;color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center}
-.empty{text-align:center;padding:40px;color:var(--muted);font-size:14px}
-.show-more{display:block;margin:12px auto;padding:10px 24px;border-radius:12px;background:var(--surfaceAlt);color:var(--muted);font-size:14px;font-weight:600}
-</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
 </head>
 <body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/organic-7f148f81-2b6d-47ff-be5c-22095a92809d/styles.css">
+  <script src="_ds/organic-7f148f81-2b6d-47ff-be5c-22095a92809d/_ds_bundle.js"></script>
+  <meta name="theme-color" content="#f5ead8">
+  <style>
+    body{margin:0}
+    a{color:var(--color-accent-700)}
+    a:hover{color:var(--color-accent-900)}
+    input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+    input:focus-visible,button:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
+  </style>
+</helmet>
 
-<div id="app"></div>
+<div style="max-width:480px;margin:0 auto;min-height:100vh;background:var(--color-bg);padding:20px 18px 60px;font-family:var(--font-body)">
 
-<script>
+  <!-- Header -->
+  <div style="text-align:center;padding:4px 0 18px">
+    <h1 style="font-size:26px;margin:0">Activity Log</h1>
+    <div style="font-size:14px;color:var(--color-accent-700);font-weight:600;margin-top:4px">{{ babyName }}</div>
+    <div style="font-size:13px;color:var(--color-neutral-600);margin-top:4px">{{ dateStr }}</div>
+    <span style="display:inline-block;margin-top:8px;font-size:11px;font-weight:600;padding:4px 12px;border-radius:999px;background:{{ syncBadgeBg }};color:{{ syncBadgeColor }}">{{ syncLabel }}</span>
+  </div>
+
+  <!-- Summary cards -->
+  <sc-if value="{{ hasLogs }}" hint-placeholder-val="{{ false }}">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px">
+      <div style="background:var(--color-accent-100);border-radius:var(--radius-lg);padding:14px 10px;text-align:center">
+        <div style="font-size:22px;font-weight:700;color:var(--color-accent-800);font-family:var(--font-heading)">{{ summary.diaperCount }}</div>
+        <div style="font-size:11px;color:var(--color-neutral-700);margin-top:2px">diapers today</div>
+        <sc-for list="{{ summary.diaperSub }}" as="line" hint-placeholder-count="0">
+          <div style="font-size:10px;color:var(--color-neutral-600);margin-top:3px;line-height:1.4">{{ line.text }}</div>
+        </sc-for>
+      </div>
+      <div style="background:var(--color-accent-2-100);border-radius:var(--radius-lg);padding:14px 10px;text-align:center">
+        <div style="font-size:22px;font-weight:700;color:var(--color-accent-2-800);font-family:var(--font-heading)">{{ summary.nurseBig }}</div>
+        <div style="font-size:11px;color:var(--color-neutral-700);margin-top:2px">last side</div>
+        <sc-for list="{{ summary.nurseSub }}" as="line" hint-placeholder-count="0">
+          <div style="font-size:10px;color:var(--color-neutral-600);margin-top:3px;line-height:1.4">{{ line.text }}</div>
+        </sc-for>
+      </div>
+      <div style="background:var(--color-neutral-200);border-radius:var(--radius-lg);padding:14px 10px;text-align:center">
+        <div style="font-size:22px;font-weight:700;color:var(--color-neutral-900);font-family:var(--font-heading)">{{ summary.bottleTotal }}<span style="font-size:11px"> mL</span></div>
+        <div style="font-size:11px;color:var(--color-neutral-700);margin-top:2px">today</div>
+        <sc-for list="{{ summary.bottleSub }}" as="line" hint-placeholder-count="0">
+          <div style="font-size:10px;color:var(--color-neutral-600);margin-top:3px;line-height:1.4">{{ line.text }}</div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- Weekly chart -->
+  <sc-if value="{{ hasLogs }}" hint-placeholder-val="{{ false }}">
+    <div style="background:var(--color-surface,#fff);background:#ffffffaa;border-radius:var(--radius-lg);padding:16px 16px 12px;margin-bottom:18px;box-shadow:var(--shadow-sm)">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg>
+        <span style="font-size:13px;font-weight:600;color:var(--color-neutral-800);flex:1">Last 7 days</span>
+        <button onclick="{{ selectYesterday }}" class="tag tag-neutral" style="cursor:pointer;border:none;font-size:11px">Yesterday</button>
+        <button onclick="{{ selectLast12h }}" class="tag tag-neutral" style="cursor:pointer;border:none;font-size:11px">Last 12 hrs</button>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:8px;height:70px">
+        <sc-for list="{{ chartData }}" as="day" hint-placeholder-count="7">
+          <button onclick="{{ day.onClick }}" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;background:none;border:none;padding:0;cursor:pointer;font-family:var(--font-body)">
+            <div style="width:100%;max-width:26px;border-radius:8px 8px 3px 3px;background:{{ day.barColor }};height:{{ day.heightPct }}%;min-height:4px"></div>
+            <span style="font-size:9px;color:{{ day.labelColor }};font-weight:{{ day.labelWeight }}">{{ day.label }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ formType }}" hint-placeholder-val="{{ null }}">
+    <!-- empty when form open, actions row hidden -->
+  </sc-if>
+
+  <!-- Action buttons -->
+  <sc-if value="{{ noForm }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;gap:10px;margin-bottom:20px">
+      <button onclick="{{ openDiaper }}" style="flex:1;padding:18px 6px;border-radius:var(--radius-lg);background:var(--color-accent-100);color:var(--color-accent-800);display:flex;flex-direction:column;align-items:center;gap:8px;border:none;font-family:var(--font-body);font-weight:700;font-size:13px">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.5-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path></svg>
+        Diaper
+      </button>
+      <button onclick="{{ openBreast }}" style="flex:1;padding:18px 6px;border-radius:var(--radius-lg);background:var(--color-accent-2-100);color:var(--color-accent-2-800);display:flex;flex-direction:column;align-items:center;gap:8px;border:none;font-family:var(--font-body);font-weight:700;font-size:13px">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>
+        Nurse
+      </button>
+      <button onclick="{{ openBottle }}" style="flex:1;padding:18px 6px;border-radius:var(--radius-lg);background:var(--color-neutral-200);color:var(--color-neutral-900);display:flex;flex-direction:column;align-items:center;gap:8px;border:none;font-family:var(--font-body);font-weight:700;font-size:13px">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h8"></path><path d="M9 2v2.789a4 4 0 0 1-.672 2.219l-.656.984A4 4 0 0 0 7 10.212V20a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-9.788a4 4 0 0 0-.672-2.219l-.656-.984A4 4 0 0 1 15 4.789V2"></path><path d="M7 15a6.472 6.472 0 0 1 5 0 6.47 6.47 0 0 0 5 0"></path></svg>
+        Bottle
+      </button>
+    </div>
+  </sc-if>
+
+  <!-- Diaper form -->
+  <sc-if value="{{ isDiaperForm }}" hint-placeholder-val="{{ false }}">
+    <div style="background:#fffdf9;border-radius:var(--radius-lg);padding:20px;margin-bottom:20px;box-shadow:var(--shadow-md)">
+      <div style="display:flex;align-items:center;margin-bottom:18px">
+        <button onclick="{{ closeForm }}" style="display:flex;align-items:center;gap:2px;color:var(--color-neutral-600);font-size:14px;font-weight:600;background:none;border:none;padding:4px 0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg>
+          Back
+        </button>
+        <div style="flex:1;text-align:center;font-family:var(--font-heading);font-size:16px;color:var(--color-accent-700);margin-right:56px">Diaper</div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-bottom:18px">
+        <button onclick="{{ togglePee }}" style="padding:10px 20px;border-radius:999px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px;border:2px solid {{ peeBorder }};background:{{ peeBg }};color:{{ peeColor }}">💧 Pee</button>
+        <button onclick="{{ togglePoop }}" style="padding:10px 20px;border-radius:999px;font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px;border:2px solid {{ poopBorder }};background:{{ poopBg }};color:{{ poopColor }}">💩 Poop</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:20px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-neutral-500)" stroke-width="2.75"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
+        <input type="datetime-local" value="{{ formTime }}" onchange="{{ setFormTime }}" style="padding:8px 12px;border-radius:10px;border:1px solid var(--color-neutral-300);background:#fff;color:var(--color-text);font-size:14px;font-family:var(--font-body)">
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button onclick="{{ closeForm }}" class="btn btn-ghost" style="border-radius:999px">Cancel</button>
+        <button onclick="{{ saveDiaper }}" disabled="{{ diaperSaveDisabled }}" style="padding:12px 32px;border-radius:999px;font-size:15px;font-weight:700;border:none;font-family:var(--font-body);background:{{ diaperSaveBg }};color:{{ diaperSaveColor }}">Save</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- Breast form -->
+  <sc-if value="{{ isBreastForm }}" hint-placeholder-val="{{ false }}">
+    <div style="background:#fffdf9;border-radius:var(--radius-lg);padding:20px;margin-bottom:20px;box-shadow:var(--shadow-md)">
+      <div style="display:flex;align-items:center;margin-bottom:18px">
+        <button onclick="{{ closeForm }}" style="display:flex;align-items:center;gap:2px;color:var(--color-neutral-600);font-size:14px;font-weight:600;background:none;border:none;padding:4px 0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg>
+          Back
+        </button>
+        <div style="flex:1;text-align:center;font-family:var(--font-heading);font-size:16px;color:var(--color-accent-2-700);margin-right:56px">Nurse</div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-bottom:18px">
+        <button onclick="{{ pickLeft }}" style="padding:10px 18px;border-radius:999px;font-size:14px;font-weight:600;border:2px solid {{ leftBorder }};background:{{ leftBg }};color:{{ leftColor }}">◂ Left</button>
+        <button onclick="{{ pickBoth }}" style="padding:10px 18px;border-radius:999px;font-size:14px;font-weight:600;border:2px solid {{ bothBorder }};background:{{ bothBg }};color:{{ bothColor }}">Both</button>
+        <button onclick="{{ pickRight }}" style="padding:10px 18px;border-radius:999px;font-size:14px;font-weight:600;border:2px solid {{ rightBorder }};background:{{ rightBg }};color:{{ rightColor }}">Right ▸</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:14px">
+        <button onclick="{{ stepMinDown }}" style="width:40px;height:40px;border-radius:12px;background:var(--color-neutral-200);border:none;font-size:20px;color:var(--color-neutral-800)">−</button>
+        <div style="width:70px;text-align:center;padding:8px 4px;border-radius:12px;background:#fff;border:2px solid var(--color-neutral-300);font-size:20px;font-weight:700;font-family:var(--font-heading);color:var(--color-accent-2-800)">{{ formMinutes }}</div>
+        <span style="color:var(--color-neutral-600);font-size:13px">min</span>
+        <button onclick="{{ stepMinUp }}" style="width:40px;height:40px;border-radius:12px;background:var(--color-neutral-200);border:none;font-size:20px;color:var(--color-neutral-800)">+</button>
+      </div>
+      <div style="display:flex;gap:6px;justify-content:center;margin-bottom:18px">
+        <button onclick="{{ setMin5 }}" class="tag tag-neutral" style="cursor:pointer;border:none">5 min</button>
+        <button onclick="{{ setMin15 }}" class="tag tag-neutral" style="cursor:pointer;border:none">15 min</button>
+        <button onclick="{{ setMin20 }}" class="tag tag-neutral" style="cursor:pointer;border:none">20 min</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:20px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-neutral-500)" stroke-width="2.75"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
+        <input type="datetime-local" value="{{ formTime }}" onchange="{{ setFormTime }}" style="padding:8px 12px;border-radius:10px;border:1px solid var(--color-neutral-300);background:#fff;color:var(--color-text);font-size:14px;font-family:var(--font-body)">
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button onclick="{{ closeForm }}" class="btn btn-ghost" style="border-radius:999px">Cancel</button>
+        <button onclick="{{ saveBreast }}" style="padding:12px 32px;border-radius:999px;font-size:15px;font-weight:700;border:none;font-family:var(--font-body);background:var(--color-accent-2-500);color:#fff">Save</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- Bottle form -->
+  <sc-if value="{{ isBottleForm }}" hint-placeholder-val="{{ false }}">
+    <div style="background:#fffdf9;border-radius:var(--radius-lg);padding:20px;margin-bottom:20px;box-shadow:var(--shadow-md)">
+      <div style="display:flex;align-items:center;margin-bottom:18px">
+        <button onclick="{{ closeForm }}" style="display:flex;align-items:center;gap:2px;color:var(--color-neutral-600);font-size:14px;font-weight:600;background:none;border:none;padding:4px 0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg>
+          Back
+        </button>
+        <div style="flex:1;text-align:center;font-family:var(--font-heading);font-size:16px;color:var(--color-neutral-800);margin-right:56px">Bottle</div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-bottom:18px">
+        <button onclick="{{ pickBreastMilk }}" style="padding:10px 18px;border-radius:999px;font-size:14px;font-weight:600;border:2px solid {{ bmBorder }};background:{{ bmBg }};color:{{ bmColor }}">Breast Milk</button>
+        <button onclick="{{ pickFormula }}" style="padding:10px 18px;border-radius:999px;font-size:14px;font-weight:600;border:2px solid {{ formulaBorder }};background:{{ formulaBg }};color:{{ formulaColor }}">Formula</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:14px">
+        <button onclick="{{ stepMlDown }}" style="width:40px;height:40px;border-radius:12px;background:var(--color-neutral-200);border:none;font-size:20px;color:var(--color-neutral-800)">−</button>
+        <div style="width:70px;text-align:center;padding:8px 4px;border-radius:12px;background:#fff;border:2px solid var(--color-neutral-300);font-size:20px;font-weight:700;font-family:var(--font-heading);color:var(--color-neutral-900)">{{ formMl }}</div>
+        <span style="color:var(--color-neutral-600);font-size:13px">mL</span>
+        <button onclick="{{ stepMlUp }}" style="width:40px;height:40px;border-radius:12px;background:var(--color-neutral-200);border:none;font-size:20px;color:var(--color-neutral-800)">+</button>
+      </div>
+      <div style="display:flex;gap:6px;justify-content:center;margin-bottom:18px">
+        <button onclick="{{ setMl3 }}" class="tag tag-neutral" style="cursor:pointer;border:none">3mL</button>
+        <button onclick="{{ setMl5 }}" class="tag tag-neutral" style="cursor:pointer;border:none">5mL</button>
+        <button onclick="{{ setMl6 }}" class="tag tag-neutral" style="cursor:pointer;border:none">6mL</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:20px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-neutral-500)" stroke-width="2.75"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
+        <input type="datetime-local" value="{{ formTime }}" onchange="{{ setFormTime }}" style="padding:8px 12px;border-radius:10px;border:1px solid var(--color-neutral-300);background:#fff;color:var(--color-text);font-size:14px;font-family:var(--font-body)">
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button onclick="{{ closeForm }}" class="btn btn-ghost" style="border-radius:999px">Cancel</button>
+        <button onclick="{{ saveBottle }}" style="padding:12px 32px;border-radius:999px;font-size:15px;font-weight:700;border:none;font-family:var(--font-body);background:{{ bottleSaveBg }};color:#fff">Save</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- History -->
+  <div style="margin:6px 0 12px 2px;font-size:14px;font-weight:700;color:var(--color-neutral-700);font-family:var(--font-heading)">History ({{ historyCount }})</div>
+
+  <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+    <div style="text-align:center;padding:40px 20px;color:var(--color-neutral-600);font-size:14px;background:#ffffff88;border-radius:var(--radius-lg)">No logs yet — tap a button above to start</div>
+  </sc-if>
+
+  <sc-for list="{{ visibleLogs }}" as="entry" hint-placeholder-count="3">
+    <div style="display:flex;align-items:center;gap:12px;padding:13px 15px;border-radius:14px;margin-bottom:8px;border-left:4px solid {{ entry.accent }};background:{{ entry.bg }}">
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:600;color:var(--color-text)">{{ entry.summaryText }}
+          <sc-if value="{{ entry.fromSheet }}" hint-placeholder-val="{{ false }}"><span class="tag tag-outline" style="font-size:9px;padding:1px 6px;margin-left:6px">synced</span></sc-if>
+        </div>
+        <div style="font-size:12px;color:var(--color-neutral-600);margin-top:3px">{{ entry.timeText }}</div>
+      </div>
+      <sc-if value="{{ entry.showDelete }}" hint-placeholder-val="{{ false }}">
+        <button onclick="{{ entry.onDelete }}" style="width:30px;height:30px;border-radius:8px;background:none;border:none;color:{{ entry.deleteColor }};display:flex;align-items:center;justify-content:center">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+        </button>
+      </sc-if>
+    </div>
+  </sc-for>
+
+  <sc-if value="{{ showMoreVisible }}" hint-placeholder-val="{{ false }}">
+    <button onclick="{{ showMore }}" class="btn btn-ghost btn-block" style="border-radius:999px;margin-top:8px">Show more ({{ remainingCount }} older)</button>
+  </sc-if>
+
+  <!-- Day detail modal -->
+  <sc-if value="{{ dayModalOpen }}" hint-placeholder-val="{{ false }}">
+    <div onclick="{{ closeDayModal }}" style="position:fixed;inset:0;background:rgba(32,30,29,.45);display:flex;align-items:flex-end;justify-content:center;z-index:50">
+      <div onclick="{{ stopClick }}" style="width:100%;max-width:480px;height:min(85vh,640px);position:relative;overflow:hidden;background:var(--color-neutral-100);border-radius:var(--radius-lg) var(--radius-lg) 0 0;box-shadow:var(--shadow-lg)">
+
+        <!-- base page: day summary -->
+        <div style="position:absolute;inset:0;overflow-y:auto;background:#fffdf9;padding:22px 20px 28px;transition:transform .32s cubic-bezier(.22,.61,.36,1),filter .32s;transform:{{ basePageTransform }};transform-origin:left center;filter:{{ basePageFilter }};z-index:1">
+          <div style="display:flex;align-items:center;margin-bottom:16px">
+            <div style="flex:1;font-family:var(--font-heading);font-size:18px;color:var(--color-text)">{{ dayModalLabel }}</div>
+            <button onclick="{{ closeDayModal }}" style="width:32px;height:32px;border-radius:999px;background:var(--color-neutral-200);border:none;display:flex;align-items:center;justify-content:center;color:var(--color-neutral-700)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+            </button>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px">
+            <sc-for list="{{ dayModalStats }}" as="stat" hint-placeholder-count="7">
+              <button onclick="{{ stat.onClick }}" style="background:{{ stat.bg }};border-radius:var(--radius-lg);padding:12px 10px;text-align:center;border:none;cursor:pointer;font-family:var(--font-body)">
+                <div style="font-size:20px;font-weight:700;font-family:var(--font-heading);color:{{ stat.fg }}">{{ stat.value }}</div>
+                <div style="font-size:11px;color:var(--color-neutral-700);margin-top:2px">{{ stat.caption }}</div>
+              </button>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ dayModalHasEntries }}" hint-placeholder-val="{{ false }}">
+            <button onclick="{{ toggleDayHistory }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 4px;background:none;border:none;border-top:1px solid var(--color-neutral-200);font-family:var(--font-body);font-size:14px;font-weight:600;color:var(--color-text);cursor:pointer">
+              Full history for this day
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-neutral-600)" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" style="transform:{{ chevronRotate }};transition:transform .2s"><path d="m6 9 6 6 6-6"></path></svg>
+            </button>
+            <sc-if value="{{ dayHistoryOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:8px">
+                <sc-for list="{{ dayModalEntries }}" as="entry" hint-placeholder-count="4">
+                  <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;margin-bottom:6px;border-left:4px solid {{ entry.accent }};background:{{ entry.bg }}">
+                    <div style="flex:1;font-size:13px;font-weight:600;color:var(--color-text)">{{ entry.summaryText }}</div>
+                    <div style="font-size:11px;color:var(--color-neutral-600)">{{ entry.timeText }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </sc-if>
+          <sc-if value="{{ dayModalHasEntriesFalse }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center;padding:20px;color:var(--color-neutral-600);font-size:13px">No activity logged this day</div>
+          </sc-if>
+        </div>
+
+        <!-- detail page: stat drill-down, slides over base -->
+        <sc-if value="{{ statDetail }}" hint-placeholder-val="{{ null }}">
+          <div style="position:absolute;top:0;bottom:0;left:14%;right:0;overflow-y:auto;background:#fffdf9;padding:22px 20px 28px;transition:transform .32s cubic-bezier(.22,.61,.36,1);transform:{{ detailPageTransform }};z-index:2;box-shadow:-10px 0 26px rgba(32,30,29,.14)">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+              <button onclick="{{ closeStat }}" style="width:32px;height:32px;border-radius:999px;background:var(--color-neutral-200);border:none;display:flex;align-items:center;justify-content:center;color:var(--color-neutral-700);flex-shrink:0">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg>
+              </button>
+              <div style="font-family:var(--font-heading);font-size:17px;color:var(--color-text)">{{ statDetail.title }}</div>
+            </div>
+            <sc-for list="{{ statDetail.entries }}" as="entry" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;margin-bottom:8px;border-left:4px solid {{ entry.accent }};background:{{ entry.bg }}">
+                <div style="flex:1;font-size:14px;font-weight:600;color:var(--color-text)">{{ entry.summaryText }}</div>
+                <div style="font-size:12px;color:var(--color-neutral-600)">{{ entry.timeText }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
 const SCRIPT_URL="https://script.google.com/macros/s/AKfycbyKhhzpzd7kcYYuWquEimol3DFPIiav44dwwH0RREujfyOO9-QWLGm6dIr84FjByrC6/exec";
 
-const S={
-  logs:JSON.parse(localStorage.getItem("bl-logs")||"[]"),
-  form:null,syncing:false,confirmDel:null,
-  showCount:5,
-  pendingWrites:JSON.parse(localStorage.getItem("bl-pending")||"[]")
-};
-
-function save(){localStorage.setItem("bl-logs",JSON.stringify(S.logs))}
-function savePending(){localStorage.setItem("bl-pending",JSON.stringify(S.pendingWrites))}
 function toDate(d){return `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`}
 function toTime(d){const h=d.getHours(),m=d.getMinutes().toString().padStart(2,"0");return `${h%12||12}:${m} ${h>=12?"PM":"AM"}`}
 function toISO(d){return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16)}
@@ -110,14 +311,16 @@ function timeSince(ds,ts){
     if(mins<0)return "";if(mins<1)return "just now";if(mins<60)return mins+"m ago";
     const hrs=Math.floor(mins/60);
     if(hrs<24)return hrs+"h "+(mins%60)+"m ago";return Math.floor(hrs/24)+"d ago";
-  }catch{return "";}
+  }catch(e){return "";}
 }
-
-function shortTime(ds,ts){
-  if(!ts||!ds)return "";
-  return ts+" · "+timeSince(ds,ts);
+function shortTime(ds,ts){if(!ts||!ds)return "";return ts+" · "+timeSince(ds,ts);}
+function summaryText(e){
+  if(e.displayType==="diaper"){const p=[];if(e.pee)p.push("💧 Pee");if(e.poop)p.push("💩 Poop");return p.join("  +  ");}
+  if(e.displayType==="breast")return `🤱 ${e.side||"?"} · ${e.breastLength}`;
+  if(e.displayType==="formula")return `🍼 Formula · ${e.formulaAmount}`;
+  if(e.displayType==="breastmilk")return `🍼 Breast Milk · ${e.breastMilkAmount}`;
+  return "📝 Feeding";
 }
-
 function classify(e){
   if(e.pee||e.poop)return "diaper";
   if(e.breastLength)return "breast";
@@ -125,7 +328,6 @@ function classify(e){
   if(e.breastMilkAmount)return "breastmilk";
   return "other";
 }
-
 function parseEntryDate(e){
   if(!e.date||!e.time)return 0;
   try{
@@ -134,232 +336,383 @@ function parseEntryDate(e){
     if(ap==="PM"&&h!==12)h+=12;if(ap==="AM"&&h===12)h=0;
     const dp=e.date.split("/");if(dp.length!==3)return 0;
     return new Date(+dp[2],+dp[0]-1,+dp[1],h,m).getTime();
-  }catch{return 0;}
+  }catch(e){return 0;}
 }
 
-function sortLogs(){S.logs.sort((a,b)=>parseEntryDate(b)-parseEntryDate(a));}
+class Component extends DCLogic {
+  state = {
+    logs: JSON.parse(localStorage.getItem("bl-logs")||"[]"),
+    pendingWrites: JSON.parse(localStorage.getItem("bl-pending")||"[]"),
+    formType: null,
+    syncing: false,
+    showCount: 5,
+    confirmDel: null,
+    formPee: false, formPoop: false,
+    formSide: "Left",
+    formMinutes: 15,
+    formBottleType: "breastmilk",
+    formMl: 4,
+    formTime: toISO(new Date()),
+    selectedRange: null,
+    dayHistoryOpen: false,
+    selectedStat: null
+  };
 
-async function syncFromSheet(){
-  S.syncing=true;render();
-  try{
-    const r=await fetch(SCRIPT_URL);
-    if(!r.ok)throw new Error("HTTP "+r.status);
-    const data=await r.json();
-    const entries=data.map(row=>{
-      const e={
-        date:row["Today's Date"]||"",time:row["Time of Day"]||"",
-        breastLength:row["Length of Breast Feeding"]||"",
-        formulaAmount:row["Formula Amount"]||"",breastMilkAmount:row["Breast Milk Amount"]||"",
-        side:row["Right Side/Left Side"]||"",pee:row["Pee"]||"",poop:row["Poop"]||"",
-        fromSheet:true,id:"s-"+Math.random().toString(36).slice(2,8)
-      };
-      if(e.date.includes("1899"))e.date="";
-      if(e.time.includes("1899"))e.time="";
-      e.displayType=classify(e);
-      return e;
-    }).filter(e=>e.date||e.time);
-    const local=S.logs.filter(l=>!l.fromSheet);
-    S.logs=[...local,...entries];
-    sortLogs();save();
-  }catch(e){console.error("Sync error:",e);}
-  S.syncing=false;render();
-}
+  selectDay(ds){this.setState({selectedRange:{mode:"day",date:ds},dayHistoryOpen:false,selectedStat:null});}
+  selectYesterday(){
+    const d=new Date();d.setDate(d.getDate()-1);
+    this.setState({selectedRange:{mode:"day",date:toDate(d)},dayHistoryOpen:false,selectedStat:null});
+  }
+  selectHours(h){this.setState({selectedRange:{mode:"hours",hours:h},dayHistoryOpen:false,selectedStat:null});}
+  closeDayModal(){this.setState({selectedRange:null,selectedStat:null});}
+  toggleDayHistory(){this.setState({dayHistoryOpen:!this.state.dayHistoryOpen});}
+  openStat(key){this.setState({selectedStat:key});}
+  closeStat(){this.setState({selectedStat:null});}
 
-async function writeToSheet(entry){
-  S.pendingWrites.push(entry);savePending();render();
-  flushPending();
-}
+  componentDidMount(){
+    this.sortLogs();
+    this.syncFromSheet();
+    if(this.state.pendingWrites.length>0) this.flushPending();
+  }
 
-async function flushPending(){
-  while(S.pendingWrites.length>0){
-    const entry=S.pendingWrites[0];
+  saveLogs(){localStorage.setItem("bl-logs",JSON.stringify(this.state.logs));}
+  savePending(){localStorage.setItem("bl-pending",JSON.stringify(this.state.pendingWrites));}
+  sortLogs(){this.state.logs.sort((a,b)=>parseEntryDate(b)-parseEntryDate(a));}
+
+  async syncFromSheet(){
+    this.setState({syncing:true});
     try{
-      const p=new URLSearchParams({
-        action:"add",date:entry.date||"",timeOfDay:entry.time||"",
-        breastLength:entry.breastLength||"",formulaAmount:entry.formulaAmount||"",
-        breastMilkAmount:entry.breastMilkAmount||"",side:entry.side||"",
-        pee:entry.pee||"",poop:entry.poop||""
-      });
-      const r=await fetch(SCRIPT_URL+"?"+p.toString());
-      if(r.ok){S.pendingWrites.shift();savePending();render();}
-      else break;
-    }catch(e){console.error("Write error:",e);break;}
-  }
-}
-
-function addEntry(entry){
-  entry.displayType=classify(entry);
-  entry.id=Date.now().toString();
-  S.logs.unshift(entry);
-  sortLogs();save();S.form=null;render();
-  writeToSheet(entry);
-}
-
-function deleteEntry(id){
-  S.logs=S.logs.filter(l=>l.id!==id);save();S.confirmDel=null;render();
-}
-
-function renderSummary(){
-  const today=toDate(new Date());
-  const all=S.logs;
-  const t=all.filter(l=>l.date===today);
-
-  // DIAPER: count today, show last pee and last poop with emoji + time
-  const diapers=t.filter(l=>l.displayType==="diaper").length;
-  const lastPee=all.filter(l=>l.pee).sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
-  const lastPoop=all.filter(l=>l.poop).sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
-  let diaperSub="";
-  if(lastPee)diaperSub+=`💧 ${shortTime(lastPee.date,lastPee.time)}`;
-  if(lastPee&&lastPoop)diaperSub+=`<br>`;
-  if(lastPoop)diaperSub+=`💩 ${shortTime(lastPoop.date,lastPoop.time)}`;
-
-  // NURSE: show last side as big text, last nursing time as sub
-  const lastNurse=all.filter(l=>l.displayType==="breast").sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
-  const nurseBig=lastNurse?(lastNurse.side||"?"):"—";
-  let nurseSub="";
-  if(lastNurse)nurseSub=`${lastNurse.breastLength}<br>${shortTime(lastNurse.date,lastNurse.time)}`;
-
-  // BOTTLE: today's total mL as big, last feed amount + time as sub
-  const todayBottle=t.filter(l=>l.displayType==="formula"||l.displayType==="breastmilk");
-  const totalMl=todayBottle.reduce((s,l)=>{
-    const m=(l.formulaAmount||l.breastMilkAmount||"").match(/(\d+)/);
-    return s+(m?+m[1]:0);
-  },0);
-  const lastBottle=all.filter(l=>l.displayType==="formula"||l.displayType==="breastmilk").sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
-  let bottleSub="";
-  if(lastBottle){
-    const amt=lastBottle.formulaAmount||lastBottle.breastMilkAmount||"";
-    bottleSub=`Last: ${amt}<br>${shortTime(lastBottle.date,lastBottle.time)}`;
+      const r=await fetch(SCRIPT_URL);
+      if(!r.ok)throw new Error("HTTP "+r.status);
+      const data=await r.json();
+      const entries=data.map(row=>{
+        const e={
+          date:row["Today's Date"]||"",time:row["Time of Day"]||"",
+          breastLength:row["Length of Breast Feeding"]||"",
+          formulaAmount:row["Formula Amount"]||"",breastMilkAmount:row["Breast Milk Amount"]||"",
+          side:row["Right Side/Left Side"]||"",pee:row["Pee"]||"",poop:row["Poop"]||"",
+          fromSheet:true,id:"s-"+Math.random().toString(36).slice(2,8)
+        };
+        if(e.date.includes("1899"))e.date="";
+        if(e.time.includes("1899"))e.time="";
+        e.displayType=classify(e);
+        return e;
+      }).filter(e=>e.date||e.time);
+      const local=this.state.logs.filter(l=>!l.fromSheet);
+      const logs=[...local,...entries];
+      logs.sort((a,b)=>parseEntryDate(b)-parseEntryDate(a));
+      this.setState({logs});
+      this.saveLogs();
+    }catch(e){console.error("Sync error:",e);}
+    this.setState({syncing:false});
   }
 
-  return `<div class="summary">
-    <div class="summary-card" style="background:var(--diaperBg)"><div class="num" style="color:var(--diaper)">${diapers}</div><div class="label">diapers today</div>${diaperSub?`<div class="sub">${diaperSub}</div>`:""}</div>
-    <div class="summary-card" style="background:var(--breastBg)"><div class="num" style="color:var(--breast)">${nurseBig}</div><div class="label">last side</div>${nurseSub?`<div class="sub">${nurseSub}</div>`:""}</div>
-    <div class="summary-card" style="background:var(--bottleBg)"><div class="num" style="color:var(--bottle)">${totalMl}<span style="font-size:12px"> mL</span></div><div class="label">today</div>${bottleSub?`<div class="sub">${bottleSub}</div>`:""}</div>
-  </div>`;
-}
+  async writeToSheet(entry){
+    this.setState({pendingWrites:[...this.state.pendingWrites,entry]});
+    this.savePending();
+    this.flushPending();
+  }
 
-function renderEntry(e){
-  const cm={diaper:{a:"var(--diaper)",b:"var(--diaperBg)"},breast:{a:"var(--breast)",b:"var(--breastBg)"},formula:{a:"var(--bottle)",b:"var(--bottleBg)"},breastmilk:{a:"var(--breastmilk)",b:"var(--breastmilkBg)"},other:{a:"var(--muted)",b:"var(--surfaceAlt)"}};
-  const c=cm[e.displayType]||cm.other;
-  let sum="";
-  if(e.displayType==="diaper"){const p=[];if(e.pee)p.push("💧 Pee");if(e.poop)p.push("💩 Poop");sum=p.join("  +  ");}
-  else if(e.displayType==="breast")sum=`🤱 ${e.side||"?"} · ${e.breastLength}`;
-  else if(e.displayType==="formula")sum=`🍼 Formula · ${e.formulaAmount}`;
-  else if(e.displayType==="breastmilk")sum=`🍼 Breast Milk · ${e.breastMilkAmount}`;
-  else sum=`📝 Feeding`;
-  const since=timeSince(e.date,e.time);
-  const badge=e.fromSheet?'<span class="sheet-badge">📊</span>':"";
-  const del=e.fromSheet?"":`<button class="delete-btn" onclick="handleDel('${e.id}')">✕</button>`;
-  return `<div class="log-entry" style="background:${c.b};border-color:${c.a}"><div class="info"><div class="summary-text">${sum}${badge}</div><div class="time-text">${e.date} ${e.time}${since?" · "+since:""}</div></div>${del}</div>`;
-}
-
-function renderForm(){
-  const now=new Date();const iso=toISO(now);
-  if(S.form==="diaper")return `<div class="form-card" style="border:1px solid rgba(244,162,97,.2)">
-    <div class="form-header"><button class="back-btn" onclick="S.form=null;render()"><span style="font-size:18px">‹</span> Back</button><div class="form-title" style="color:var(--diaper)">🧷 Diaper</div></div>
-    <div class="form-row"><button class="pill" id="pee-btn" onclick="togglePill('pee')" style="background:var(--surfaceAlt);color:var(--muted)">💧 Pee</button><button class="pill" id="poop-btn" onclick="togglePill('poop')" style="background:var(--surfaceAlt);color:var(--muted)">💩 Poop</button></div>
-    <div class="time-row">🕐 <input type="datetime-local" id="f-time" value="${iso}"></div>
-    <div class="btn-row"><button class="cancel-btn" onclick="S.form=null;render()">Cancel</button><button class="save-btn" style="background:var(--diaper);color:#1a1a2e" onclick="saveDiaper()">Save</button></div></div>`;
-  if(S.form==="breast")return `<div class="form-card" style="border:1px solid rgba(167,139,250,.2)">
-    <div class="form-header"><button class="back-btn" onclick="S.form=null;render()"><span style="font-size:18px">‹</span> Back</button><div class="form-title" style="color:var(--breast)">🤱 Breastfeed</div></div>
-    <div class="form-row"><button class="pill active" id="left-btn" onclick="pickSide('Left')" style="color:var(--breast);border-color:var(--breast);background:rgba(167,139,250,.13)">◀ Left</button><button class="pill" id="both-btn" onclick="pickSide('Both')" style="background:var(--surfaceAlt);color:var(--muted)">Both</button><button class="pill" id="right-btn" onclick="pickSide('Right')" style="background:var(--surfaceAlt);color:var(--muted)">▶ Right</button></div>
-    <div class="stepper"><button onclick="stepMin(-1)">−</button><input type="number" id="f-mins" value="15"><span class="unit">min</span><button onclick="stepMin(1)">+</button></div>
-    <div class="quick-btns"><button class="quick-btn" onclick="setMin(5)">5 min</button><button class="quick-btn" onclick="setMin(15)">15 min</button><button class="quick-btn" onclick="setMin(20)">20 min</button></div>
-    <div class="time-row">🕐 <input type="datetime-local" id="f-time" value="${iso}"></div>
-    <div class="btn-row"><button class="cancel-btn" onclick="S.form=null;render()">Cancel</button><button class="save-btn" style="background:var(--breast);color:#1a1a2e" onclick="saveBreast()">Save</button></div></div>`;
-  if(S.form==="bottle")return `<div class="form-card" style="border:1px solid rgba(96,197,241,.2)">
-    <div class="form-header"><button class="back-btn" onclick="S.form=null;render()"><span style="font-size:18px">‹</span> Back</button><div class="form-title" style="color:var(--bottle)">🍼 Bottle</div></div>
-    <div class="form-row"><button class="pill active" id="bm-btn" onclick="pickBottle('breastmilk')" style="color:var(--breastmilk);border-color:var(--breastmilk);background:rgba(249,168,212,.13)">Breast Milk</button><button class="pill" id="formula-btn" onclick="pickBottle('formula')" style="background:var(--surfaceAlt);color:var(--muted)">Formula</button></div>
-    <div class="stepper"><button onclick="stepMl(-1)">−</button><input type="number" id="f-ml" value="4"><span class="unit">mL</span><button onclick="stepMl(1)">+</button></div>
-    <div class="quick-btns"><button class="quick-btn" onclick="setMl(3)">3mL</button><button class="quick-btn" onclick="setMl(5)">5mL</button><button class="quick-btn" onclick="setMl(6)">6mL</button></div>
-    <div class="time-row">🕐 <input type="datetime-local" id="f-time" value="${iso}"></div>
-    <div class="btn-row"><button class="cancel-btn" onclick="S.form=null;render()">Cancel</button><button class="save-btn" id="bottle-save" style="background:var(--breastmilk);color:#1a1a2e" onclick="saveBottle()">Save</button></div></div>`;
-  return "";
-}
-
-function render(){
-  const app=document.getElementById("app");
-  const syncStatus=S.syncing?"Syncing...":S.pendingWrites.length>0?`${S.pendingWrites.length} pending upload`:"Synced with Sheet";
-  let h=`<div class="header"><h1>Activity Log 👶</h1><div class="baby-name">Alaiya Maeve Querubin</div><div class="date">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}</div>
-    <span class="sync-badge ${S.syncing?"active":""}">${S.syncing?"⟳ ":"📊 "}${syncStatus}</span></div>`;
-
-  if(S.logs.length>0)h+=renderSummary();
-  
-  if(!S.form){
-    h+=`<div class="actions">
-      <button class="action-btn" style="border:2px solid rgba(244,162,97,.2);background:var(--diaperBg);color:var(--diaper)" onclick="S.form='diaper';render()"><span class="icon">🧷</span>Diaper</button>
-      <button class="action-btn" style="border:2px solid rgba(167,139,250,.2);background:var(--breastBg);color:var(--breast)" onclick="S.form='breast';render()"><span class="icon">🤱</span>Nurse</button>
-      <button class="action-btn" style="border:2px solid rgba(96,197,241,.2);background:var(--bottleBg);color:var(--bottle)" onclick="S.form='bottle';render()"><span class="icon">🍼</span>Bottle</button>
-    </div>`;
-  }else{h+=renderForm();}
-  
-  h+=`<div class="history-header">History (${S.logs.length})</div>`;
-  if(S.logs.length===0&&!S.syncing)h+=`<div class="empty">No logs yet — tap a button above to start</div>`;
-  else{
-    const visible=S.logs.slice(0,S.showCount);
-    visible.forEach(e=>{h+=renderEntry(e);});
-    if(S.logs.length>S.showCount){
-      const remaining=S.logs.length-S.showCount;
-      h+=`<button class="show-more" onclick="showMore()">Show more (${remaining} older)</button>`;
+  async flushPending(){
+    while(this.state.pendingWrites.length>0){
+      const entry=this.state.pendingWrites[0];
+      try{
+        const p=new URLSearchParams({
+          action:"add",date:entry.date||"",timeOfDay:entry.time||"",
+          breastLength:entry.breastLength||"",formulaAmount:entry.formulaAmount||"",
+          breastMilkAmount:entry.breastMilkAmount||"",side:entry.side||"",
+          pee:entry.pee||"",poop:entry.poop||""
+        });
+        const r=await fetch(SCRIPT_URL+"?"+p.toString());
+        if(r.ok){
+          const pendingWrites=this.state.pendingWrites.slice(1);
+          this.setState({pendingWrites});
+          this.savePending();
+        } else break;
+      }catch(e){console.error("Write error:",e);break;}
     }
   }
-  app.innerHTML=h;
+
+  addEntry(entry){
+    entry.displayType=classify(entry);
+    entry.id=Date.now().toString();
+    const logs=[entry,...this.state.logs];
+    logs.sort((a,b)=>parseEntryDate(b)-parseEntryDate(a));
+    this.setState({logs,formType:null,formPee:false,formPoop:false,formSide:"Left",formBottleType:"breastmilk"});
+    this.saveLogs();
+    this.writeToSheet(entry);
+  }
+  deleteEntry(id){
+    const logs=this.state.logs.filter(l=>l.id!==id);
+    this.setState({logs,confirmDel:null});
+    this.saveLogs();
+  }
+  handleDel(id){
+    if(this.state.confirmDel===id){this.deleteEntry(id);}
+    else{
+      this.setState({confirmDel:id});
+      setTimeout(()=>{if(this.state.confirmDel===id)this.setState({confirmDel:null});},3000);
+    }
+  }
+
+  saveDiaper(){
+    if(!this.state.formPee&&!this.state.formPoop)return;
+    const d=new Date(this.state.formTime);
+    this.addEntry({date:toDate(d),time:toTime(d),pee:this.state.formPee?"X":"",poop:this.state.formPoop?"X":""});
+  }
+  saveBreast(){
+    const d=new Date(this.state.formTime);
+    this.addEntry({date:toDate(d),time:toTime(d),breastLength:this.state.formMinutes+" min",side:this.state.formSide});
+  }
+  saveBottle(){
+    const d=new Date(this.state.formTime);
+    const ml=this.state.formMl;
+    this.addEntry({date:toDate(d),time:toTime(d),formulaAmount:this.state.formBottleType==="formula"?ml+" mL":"",breastMilkAmount:this.state.formBottleType==="breastmilk"?ml+" mL":""});
+  }
+
+  renderVals(){
+    const s=this.state;
+    const today=toDate(new Date());
+    const all=s.logs;
+    const t=all.filter(l=>l.date===today);
+
+    const diapers=t.filter(l=>l.displayType==="diaper").length;
+    const lastPee=all.filter(l=>l.pee).sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
+    const lastPoop=all.filter(l=>l.poop).sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
+    const diaperSub=[];
+    if(lastPee)diaperSub.push({text:`💧 ${shortTime(lastPee.date,lastPee.time)}`});
+    if(lastPoop)diaperSub.push({text:`💩 ${shortTime(lastPoop.date,lastPoop.time)}`});
+
+    const lastNurse=all.filter(l=>l.displayType==="breast").sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
+    const nurseBig=lastNurse?(lastNurse.side||"?"):"—";
+    const nurseSub=[];
+    if(lastNurse){nurseSub.push({text:lastNurse.breastLength});nurseSub.push({text:shortTime(lastNurse.date,lastNurse.time)});}
+
+    const todayBottle=t.filter(l=>l.displayType==="formula"||l.displayType==="breastmilk");
+    const totalMl=todayBottle.reduce((sum,l)=>{
+      const m=(l.formulaAmount||l.breastMilkAmount||"").match(/(\d+)/);
+      return sum+(m?+m[1]:0);
+    },0);
+    const lastBottle=all.filter(l=>l.displayType==="formula"||l.displayType==="breastmilk").sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
+    const bottleSub=[];
+    if(lastBottle){
+      const amt=lastBottle.formulaAmount||lastBottle.breastMilkAmount||"";
+      bottleSub.push({text:`Last: ${amt}`});
+      bottleSub.push({text:shortTime(lastBottle.date,lastBottle.time)});
+    }
+
+    // 7-day chart: total activity count per day
+    const chartData=[];
+    const dowLabels=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    const counts=[];
+    for(let i=6;i>=0;i--){
+      const day=new Date();day.setDate(day.getDate()-i);
+      const ds=toDate(day);
+      const count=all.filter(l=>l.date===ds).length;
+      counts.push({ds,count,isToday:i===0,dow:day.getDay()});
+    }
+    const maxCount=Math.max(1,...counts.map(c=>c.count));
+    counts.forEach(c=>{
+      const isSelected = s.selectedRange&&s.selectedRange.mode==="day"&&s.selectedRange.date===c.ds;
+      chartData.push({
+        ds:c.ds,
+        label:dowLabels[c.dow],
+        heightPct: c.count===0 ? 4 : Math.round((c.count/maxCount)*100),
+        barColor: isSelected?"var(--color-accent-700)":(c.isToday?"var(--color-accent-500)":"var(--color-accent-400)"),
+        labelColor: isSelected?"var(--color-accent-900)":(c.isToday?"var(--color-accent-800)":"var(--color-neutral-500)"),
+        labelWeight: (c.isToday||isSelected)?"700":"400",
+        onClick:()=>this.selectDay(c.ds)
+      });
+    });
+
+    const syncLabel = s.syncing?"Syncing...":s.pendingWrites.length>0?`${s.pendingWrites.length} pending upload`:"Synced with Sheet";
+
+    const entryStyles={
+      diaper:{accent:"var(--color-accent-500)",bg:"var(--color-accent-100)",deleteColor:"var(--color-accent-700)"},
+      breast:{accent:"var(--color-accent-2-500)",bg:"var(--color-accent-2-100)",deleteColor:"var(--color-accent-2-700)"},
+      formula:{accent:"var(--color-neutral-500)",bg:"var(--color-neutral-200)",deleteColor:"var(--color-neutral-700)"},
+      breastmilk:{accent:"var(--color-neutral-600)",bg:"var(--color-neutral-200)",deleteColor:"var(--color-neutral-700)"},
+      other:{accent:"var(--color-neutral-400)",bg:"var(--color-neutral-100)",deleteColor:"var(--color-neutral-600)"}
+    };
+
+    // Selected-range modal (a specific day, or a rolling hours window)
+    let dayModal=null;
+    if(s.selectedRange){
+      const range=s.selectedRange;
+      let dayLogs, niceDate;
+      if(range.mode==="hours"){
+        const cutoff=Date.now()-range.hours*3600000;
+        dayLogs=all.filter(l=>{const t=parseEntryDate(l);return t>=cutoff&&t<=Date.now();}).sort((a,b)=>parseEntryDate(a)-parseEntryDate(b));
+        niceDate=`Last ${range.hours} hours`;
+      }else{
+        dayLogs=all.filter(l=>l.date===range.date).sort((a,b)=>parseEntryDate(a)-parseEntryDate(b));
+        const [mm,dd,yy]=range.date.split("/");
+        niceDate=new Date(+yy,+mm-1,+dd).toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
+      }
+      const dDiapers=dayLogs.filter(l=>l.displayType==="diaper");
+      const wet=dDiapers.filter(l=>l.pee).length;
+      const dirty=dDiapers.filter(l=>l.poop).length;
+      const dNurse=dayLogs.filter(l=>l.displayType==="breast");
+      const nurseMin=dNurse.reduce((sum,l)=>sum+(parseInt(l.breastLength)||0),0);
+      const dBottle=dayLogs.filter(l=>l.displayType==="formula"||l.displayType==="breastmilk");
+      const dMl=dBottle.reduce((sum,l)=>{const m=(l.formulaAmount||l.breastMilkAmount||"").match(/(\d+)/);return sum+(m?+m[1]:0);},0);
+      const fmt=(e)=>{const st=entryStyles[e.displayType]||entryStyles.other;return {id:e.id,accent:st.accent,bg:st.bg,summaryText:summaryText(e),timeText:e.time};};
+      const dayEntries=dayLogs.slice().reverse().map(fmt);
+
+      const longestGapOf=(list)=>{
+        const sorted=list.slice().sort((a,b)=>parseEntryDate(a)-parseEntryDate(b));
+        if(sorted.length<2)return {text:"—",entries:[]};
+        let maxDiff=-1,maxIdx=1;
+        for(let i=1;i<sorted.length;i++){
+          const diff=parseEntryDate(sorted[i])-parseEntryDate(sorted[i-1]);
+          if(diff>maxDiff){maxDiff=diff;maxIdx=i;}
+        }
+        const mins=Math.round(maxDiff/60000);
+        const text = mins<60 ? `${mins}m` : `${Math.floor(mins/60)}h ${mins%60}m`;
+        return {text,entries:[sorted[maxIdx-1],sorted[maxIdx]].map(fmt)};
+      };
+      const diaperGap=longestGapOf(dDiapers);
+      const nurseGap=longestGapOf(dNurse);
+      const bottleGap=longestGapOf(dBottle);
+
+      const statDefs=[
+        {key:"diapers",value:String(dDiapers.length),caption:"diapers",bg:"var(--color-accent-100)",fg:"var(--color-accent-800)",title:"Diapers",entries:dDiapers.map(fmt)},
+        {key:"wet",value:String(wet),caption:"wet",bg:"var(--color-accent-100)",fg:"var(--color-accent-700)",title:"Wet diapers",entries:dDiapers.filter(l=>l.pee).map(fmt)},
+        {key:"dirty",value:String(dirty),caption:"dirty",bg:"var(--color-accent-200)",fg:"var(--color-accent-900)",title:"Dirty diapers",entries:dDiapers.filter(l=>l.poop).map(fmt)},
+        {key:"diaperGap",value:diaperGap.text,caption:"longest diaper gap",bg:"var(--color-accent-100)",fg:"var(--color-accent-800)",title:"Longest gap between diapers",entries:diaperGap.entries},
+        {key:"ml",value:String(dMl),caption:"mL total",bg:"var(--color-neutral-200)",fg:"var(--color-neutral-900)",title:"Bottle feeds",entries:dBottle.map(fmt)},
+        {key:"bottleGap",value:bottleGap.text,caption:"longest bottle gap",bg:"var(--color-neutral-100)",fg:"var(--color-neutral-800)",title:"Longest gap between bottles",entries:bottleGap.entries},
+        {key:"nurseMin",value:String(nurseMin),caption:"min breastfed",bg:"var(--color-accent-2-100)",fg:"var(--color-accent-2-800)",title:"Nursing sessions",entries:dNurse.map(fmt)},
+        {key:"nurseSessions",value:String(dNurse.length),caption:"nursing sessions",bg:"var(--color-accent-2-200)",fg:"var(--color-accent-2-900)",title:"Nursing sessions",entries:dNurse.map(fmt)},
+        {key:"nurseGap",value:nurseGap.text,caption:"longest nurse gap",bg:"var(--color-accent-2-100)",fg:"var(--color-accent-2-800)",title:"Longest gap between nursing sessions",entries:nurseGap.entries}
+      ];
+      dayModal={
+        label:niceDate,
+        stats:statDefs,
+        hasEntries: dayEntries.length>0,
+        entries: dayEntries
+      };
+    }
+
+    const visibleLogs=s.logs.slice(0,s.showCount).map(e=>{
+      const st=entryStyles[e.displayType]||entryStyles.other;
+      let sum="";
+      if(e.displayType==="diaper"){const p=[];if(e.pee)p.push("💧 Pee");if(e.poop)p.push("💩 Poop");sum=p.join("  +  ");}
+      else if(e.displayType==="breast")sum=`🤱 ${e.side||"?"} · ${e.breastLength}`;
+      else if(e.displayType==="formula")sum=`🍼 Formula · ${e.formulaAmount}`;
+      else if(e.displayType==="breastmilk")sum=`🍼 Breast Milk · ${e.breastMilkAmount}`;
+      else sum="📝 Feeding";
+      const since=timeSince(e.date,e.time);
+      return {
+        id:e.id, accent:st.accent, bg:st.bg, deleteColor:st.deleteColor,
+        summaryText:sum,
+        timeText:`${e.date} ${e.time}${since?" · "+since:""}`,
+        fromSheet:!!e.fromSheet,
+        showDelete:!e.fromSheet,
+        onDelete:()=>this.handleDel(e.id)
+      };
+    });
+
+    return {
+      babyName:"Alaiya Maeve Querubin",
+      dateStr:new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}),
+      syncLabel, syncBadgeBg: s.syncing?"var(--color-accent-200)":"var(--color-neutral-200)",
+      syncBadgeColor: s.syncing?"var(--color-accent-800)":"var(--color-neutral-700)",
+      hasLogs: s.logs.length>0,
+      summary:{diaperCount:diapers,diaperSub,nurseBig,nurseSub,bottleTotal:totalMl,bottleSub},
+      chartData,
+      noForm: !s.formType,
+      formType: s.formType,
+      isDiaperForm: s.formType==="diaper",
+      isBreastForm: s.formType==="breast",
+      isBottleForm: s.formType==="bottle",
+      openDiaper:()=>this.setState({formType:"diaper",formTime:toISO(new Date())}),
+      openBreast:()=>this.setState({formType:"breast",formTime:toISO(new Date())}),
+      openBottle:()=>this.setState({formType:"bottle",formTime:toISO(new Date())}),
+      closeForm:()=>this.setState({formType:null}),
+      formTime:s.formTime,
+      setFormTime:(ev)=>this.setState({formTime:ev.target.value}),
+
+      togglePee:()=>this.setState({formPee:!s.formPee}),
+      togglePoop:()=>this.setState({formPoop:!s.formPoop}),
+      peeBg: s.formPee?"var(--color-accent-2-100)":"var(--color-neutral-100)",
+      peeColor: s.formPee?"var(--color-accent-2-800)":"var(--color-neutral-600)",
+      peeBorder: s.formPee?"var(--color-accent-2-500)":"transparent",
+      poopBg: s.formPoop?"var(--color-accent-100)":"var(--color-neutral-100)",
+      poopColor: s.formPoop?"var(--color-accent-800)":"var(--color-neutral-600)",
+      poopBorder: s.formPoop?"var(--color-accent-500)":"transparent",
+      diaperSaveDisabled: !s.formPee&&!s.formPoop,
+      diaperSaveBg: (!s.formPee&&!s.formPoop)?"var(--color-neutral-200)":"var(--color-accent-500)",
+      diaperSaveColor: (!s.formPee&&!s.formPoop)?"var(--color-neutral-500)":"#fff",
+      saveDiaper:()=>this.saveDiaper(),
+
+      pickLeft:()=>this.setState({formSide:"Left"}),
+      pickBoth:()=>this.setState({formSide:"Both"}),
+      pickRight:()=>this.setState({formSide:"Right"}),
+      leftBg: s.formSide==="Left"?"var(--color-accent-2-100)":"var(--color-neutral-100)",
+      leftColor: s.formSide==="Left"?"var(--color-accent-2-800)":"var(--color-neutral-600)",
+      leftBorder: s.formSide==="Left"?"var(--color-accent-2-500)":"transparent",
+      bothBg: s.formSide==="Both"?"var(--color-accent-2-100)":"var(--color-neutral-100)",
+      bothColor: s.formSide==="Both"?"var(--color-accent-2-800)":"var(--color-neutral-600)",
+      bothBorder: s.formSide==="Both"?"var(--color-accent-2-500)":"transparent",
+      rightBg: s.formSide==="Right"?"var(--color-accent-2-100)":"var(--color-neutral-100)",
+      rightColor: s.formSide==="Right"?"var(--color-accent-2-800)":"var(--color-neutral-600)",
+      rightBorder: s.formSide==="Right"?"var(--color-accent-2-500)":"transparent",
+      formMinutes:s.formMinutes,
+      stepMinDown:()=>this.setState({formMinutes:Math.max(1,s.formMinutes-1)}),
+      stepMinUp:()=>this.setState({formMinutes:Math.min(120,s.formMinutes+1)}),
+      setMin5:()=>this.setState({formMinutes:5}),
+      setMin15:()=>this.setState({formMinutes:15}),
+      setMin20:()=>this.setState({formMinutes:20}),
+      saveBreast:()=>this.saveBreast(),
+
+      pickBreastMilk:()=>this.setState({formBottleType:"breastmilk"}),
+      pickFormula:()=>this.setState({formBottleType:"formula"}),
+      bmBg: s.formBottleType==="breastmilk"?"var(--color-neutral-200)":"var(--color-neutral-100)",
+      bmColor: s.formBottleType==="breastmilk"?"var(--color-neutral-900)":"var(--color-neutral-600)",
+      bmBorder: s.formBottleType==="breastmilk"?"var(--color-neutral-500)":"transparent",
+      formulaBg: s.formBottleType==="formula"?"var(--color-accent-2-100)":"var(--color-neutral-100)",
+      formulaColor: s.formBottleType==="formula"?"var(--color-accent-2-800)":"var(--color-neutral-600)",
+      formulaBorder: s.formBottleType==="formula"?"var(--color-accent-2-500)":"transparent",
+      formMl:s.formMl,
+      stepMlDown:()=>this.setState({formMl:Math.max(1,s.formMl-1)}),
+      stepMlUp:()=>this.setState({formMl:Math.min(500,s.formMl+1)}),
+      setMl3:()=>this.setState({formMl:3}),
+      setMl5:()=>this.setState({formMl:5}),
+      setMl6:()=>this.setState({formMl:6}),
+      bottleSaveBg: s.formBottleType==="formula"?"var(--color-accent-2-500)":"var(--color-neutral-700)",
+      saveBottle:()=>this.saveBottle(),
+
+      historyCount:s.logs.length,
+      isEmpty: s.logs.length===0 && !s.syncing,
+      visibleLogs,
+      showMoreVisible: s.logs.length>s.showCount,
+      remainingCount: Math.max(0,s.logs.length-s.showCount),
+      showMore:()=>this.setState({showCount:s.showCount+10}),
+
+      dayModalOpen: !!dayModal,
+      dayModalLabel: dayModal?dayModal.label:"",
+      dayModalStats: dayModal?dayModal.stats.map(st=>({...st,onClick:()=>this.openStat(st.key)})):[],
+      dayModalHasEntries: dayModal?dayModal.hasEntries:false,
+      dayModalHasEntriesFalse: dayModal?!dayModal.hasEntries:false,
+      dayModalEntries: dayModal?dayModal.entries:[],
+      stopClick:(ev)=>ev.stopPropagation(),
+      selectYesterday:()=>this.selectYesterday(),
+      selectLast12h:()=>this.selectHours(12),
+      statDetailOpen: !!(dayModal && s.selectedStat),
+      statDetail: (dayModal && s.selectedStat) ? dayModal.stats.find(st=>st.key===s.selectedStat) : null,
+      closeStat:()=>this.closeStat(),
+      basePageTransform: (dayModal && s.selectedStat) ? "scale(0.94)" : "scale(1)",
+      basePageFilter: (dayModal && s.selectedStat) ? "brightness(0.82)" : "brightness(1)",
+      detailPageTransform: (dayModal && s.selectedStat) ? "translateX(0)" : "translateX(102%)",
+      dayHistoryOpen: s.dayHistoryOpen,
+      toggleDayHistory:()=>this.toggleDayHistory(),
+      closeDayModal:()=>this.closeDayModal(),
+      chevronRotate: s.dayHistoryOpen?"rotate(180deg)":"rotate(0deg)"
+    };
+  }
 }
 
-let formPee=false,formPoop=false,formSide="Left",formBottleType="breastmilk";
-
-function togglePill(type){
-  if(type==="pee"){formPee=!formPee;const b=document.getElementById("pee-btn");b.style.background=formPee?"rgba(240,213,110,.13)":"var(--surfaceAlt)";b.style.color=formPee?"var(--pee)":"var(--muted)";b.style.borderColor=formPee?"var(--pee)":"transparent";b.className=formPee?"pill active":"pill";}
-  if(type==="poop"){formPoop=!formPoop;const b=document.getElementById("poop-btn");b.style.background=formPoop?"rgba(196,127,60,.13)":"var(--surfaceAlt)";b.style.color=formPoop?"var(--poop)":"var(--muted)";b.style.borderColor=formPoop?"var(--poop)":"transparent";b.className=formPoop?"pill active":"pill";}
-}
-function pickSide(s){
-  formSide=s;
-  const lb=document.getElementById("left-btn"),rb=document.getElementById("right-btn"),bb=document.getElementById("both-btn");
-  [lb,rb,bb].forEach(b=>{b.className="pill";b.style.color="var(--muted)";b.style.borderColor="transparent";b.style.background="var(--surfaceAlt)";});
-  const active=s==="Left"?lb:s==="Right"?rb:bb;
-  active.className="pill active";active.style.color="var(--breast)";active.style.borderColor="var(--breast)";active.style.background="rgba(167,139,250,.13)";
-}
-function pickBottle(t){
-  formBottleType=t;
-  const fb=document.getElementById("formula-btn"),bb=document.getElementById("bm-btn"),sv=document.getElementById("bottle-save");
-  fb.className=t==="formula"?"pill active":"pill";fb.style.color=t==="formula"?"var(--formula)":"var(--muted)";fb.style.borderColor=t==="formula"?"var(--formula)":"transparent";fb.style.background=t==="formula"?"rgba(96,197,241,.13)":"var(--surfaceAlt)";
-  bb.className=t==="breastmilk"?"pill active":"pill";bb.style.color=t==="breastmilk"?"var(--breastmilk)":"var(--muted)";bb.style.borderColor=t==="breastmilk"?"rgba(249,168,212,1)":"transparent";bb.style.background=t==="breastmilk"?"rgba(249,168,212,.13)":"var(--surfaceAlt)";
-  sv.style.background=t==="formula"?"var(--formula)":"var(--breastmilk)";
-}
-function stepMin(d){const i=document.getElementById("f-mins");i.value=Math.max(1,Math.min(120,(+i.value||0)+d));}
-function stepMl(d){const i=document.getElementById("f-ml");i.value=Math.max(1,Math.min(500,(+i.value||0)+d));}
-function setMl(v){document.getElementById("f-ml").value=v;}
-function setMin(v){document.getElementById("f-mins").value=v;}
-function showMore(){S.showCount+=10;render();}
-
-function saveDiaper(){
-  if(!formPee&&!formPoop)return;
-  const d=new Date(document.getElementById("f-time").value);
-  addEntry({date:toDate(d),time:toTime(d),pee:formPee?"X":"",poop:formPoop?"X":""});
-  formPee=false;formPoop=false;
-}
-function saveBreast(){
-  const mins=document.getElementById("f-mins").value;
-  const d=new Date(document.getElementById("f-time").value);
-  addEntry({date:toDate(d),time:toTime(d),breastLength:mins+" min",side:formSide});
-  formSide="Left";
-}
-function saveBottle(){
-  const ml=document.getElementById("f-ml").value;
-  const d=new Date(document.getElementById("f-time").value);
-  addEntry({date:toDate(d),time:toTime(d),formulaAmount:formBottleType==="formula"?ml+" mL":"",breastMilkAmount:formBottleType==="breastmilk"?ml+" mL":""});
-  formBottleType="breastmilk";
-}
-
-function handleDel(id){
-  if(S.confirmDel===id){deleteEntry(id);}
-  else{S.confirmDel=id;render();setTimeout(()=>{if(S.confirmDel===id){S.confirmDel=null;render();}},3000);}
-}
-
-render();
-syncFromSheet();
-if(S.pendingWrites.length>0)flushPending();
 </script>
 </body>
 </html>
