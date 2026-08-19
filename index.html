@@ -92,7 +92,7 @@ h1,h2,h3,h4{font-family:var(--font-h);font-weight:400}
 <div id="app"></div>
 <script>
 const SCRIPT_URL="https://script.google.com/macros/s/AKfycbyKhhzpzd7kcYYuWquEimol3DFPIiav44dwwH0RREujfyOO9-QWLGm6dIr84FjByrC6/exec";
-const S={logs:JSON.parse(localStorage.getItem("bl-logs")||"[]"),form:null,syncing:false,confirmDel:null,showCount:5,pendingWrites:JSON.parse(localStorage.getItem("bl-pending")||"[]"),selectedDay:null,dayExpanded:false};
+const S={logs:JSON.parse(localStorage.getItem("bl-logs")||"[]"),form:null,syncing:false,confirmDel:null,showCount:5,pendingWrites:JSON.parse(localStorage.getItem("bl-pending")||"[]"),selectedDay:null,selectedRange:null,dayExpanded:false};
 function save(){localStorage.setItem("bl-logs",JSON.stringify(S.logs))}
 function savePending(){localStorage.setItem("bl-pending",JSON.stringify(S.pendingWrites))}
 function toDate(d){return `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`}
@@ -140,7 +140,7 @@ function renderChart(){
   const mx=Math.max(1,...counts.map(c=>c.count));
   let bars="";counts.forEach(c=>{const sel=S.selectedDay===c.ds;const pct=c.count===0?4:Math.round((c.count/mx)*100);
     bars+=`<button class="chart-bar-wrap" onclick="openDay('${c.ds}')"><div style="width:100%;max-width:26px;border-radius:8px 8px 3px 3px;background:${sel?"var(--accent)":c.isToday?"#d67f48":"#f6a06b"};height:${pct}%;min-height:4px"></div><span style="font-size:9px;color:${sel?"var(--accent)":c.isToday?"#8c491a":"var(--mutedLight)"};font-weight:${c.isToday||sel?"700":"400"}">${dow[c.dow]}</span></button>`;});
-  return `<div class="chart-wrap"><div style="display:flex;align-items:center;gap:6px;margin-bottom:12px"><span style="font-size:13px;font-weight:600;flex:1">Last 7 days</span></div><div style="display:flex;align-items:flex-end;gap:8px;height:70px">${bars}</div></div>`;
+  return `<div class="chart-wrap"><div style="display:flex;align-items:center;gap:6px;margin-bottom:12px"><span style="font-size:13px;font-weight:600;flex:1">Last 7 days</span><button onclick="openYesterday()" style="padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;background:#eee7db;color:var(--muted);border:none;cursor:pointer">Yesterday</button><button onclick="openLast12h()" style="padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;background:#eee7db;color:var(--muted);border:none;cursor:pointer">Last 12 hrs</button></div><div style="display:flex;align-items:flex-end;gap:8px;height:70px">${bars}</div></div>`;
 }
 
 function renderEntry(e,i){const c=EC[e.displayType]||EC.other;const since=timeSince(e.date,e.time);const sheet=e.fromSheet?'<span class="sync-tag">synced</span>':"";const del=e.fromSheet?"":`<button class="del-btn" style="color:var(--mutedLight)" onclick="handleDel('${e.id}')">✕</button>`;
@@ -155,23 +155,39 @@ function renderForm(){const iso=toISO(new Date());
 }
 
 function renderDayModal(){
-  if(!S.selectedDay)return "";
-  const dayLogs=S.logs.filter(l=>l.date===S.selectedDay).sort((a,b)=>parseEntryDate(a)-parseEntryDate(b));
-  const [mm,dd,yy]=S.selectedDay.split("/");const nice=new Date(+yy,+mm-1,+dd).toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
+  if(!S.selectedDay&&!S.selectedRange)return "";
+  let dayLogs,title;
+  if(S.selectedRange==="12h"){
+    const cutoff=Date.now()-12*3600000;
+    dayLogs=S.logs.filter(l=>{const t=parseEntryDate(l);return t>=cutoff&&t<=Date.now();}).sort((a,b)=>parseEntryDate(a)-parseEntryDate(b));
+    title="Last 12 Hours";
+  }else{
+    const ds=S.selectedDay;
+    dayLogs=S.logs.filter(l=>l.date===ds).sort((a,b)=>parseEntryDate(a)-parseEntryDate(b));
+    const [mm,dd,yy]=ds.split("/");title=new Date(+yy,+mm-1,+dd).toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
+  }
   const diapers=dayLogs.filter(l=>l.displayType==="diaper").length;
   const wet=dayLogs.filter(l=>l.pee).length;const dirty=dayLogs.filter(l=>l.poop).length;
-  const nurseMin=dayLogs.filter(l=>l.displayType==="breast").reduce((s,l)=>s+(parseInt(l.breastLength)||0),0);
-  const nurseSessions=dayLogs.filter(l=>l.displayType==="breast").length;
-  const bottleMl=dayLogs.filter(l=>l.displayType==="formula"||l.displayType==="breastmilk").reduce((s,l)=>{const m=(l.formulaAmount||l.breastMilkAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);
-  const pumpMl=dayLogs.filter(l=>l.displayType==="pump").reduce((s,l)=>{const m=(l.pumpAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);
+  const nurseEntries=dayLogs.filter(l=>l.displayType==="breast");
+  const nurseMin=nurseEntries.reduce((s,l)=>s+(parseInt(l.breastLength)||0),0);
+  const bottleEntries=dayLogs.filter(l=>l.displayType==="formula"||l.displayType==="breastmilk");
+  const bottleMl=bottleEntries.reduce((s,l)=>{const m=(l.formulaAmount||l.breastMilkAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);
+  const pumpEntries=dayLogs.filter(l=>l.displayType==="pump");
+  const pumpMl=pumpEntries.reduce((s,l)=>{const m=(l.pumpAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);
   let stats=`<div class="summary">
     <div class="s-card" style="background:var(--diaper-bg)"><div class="num" style="color:var(--diaper-fg)">${diapers}</div><div class="label">diapers (${wet}💧 ${dirty}💩)</div></div>
-    <div class="s-card" style="background:var(--nurse-bg)"><div class="num" style="color:var(--nurse-fg)">${nurseMin}<span style="font-size:11px">min</span></div><div class="label">${nurseSessions} sessions</div></div>
-    <div class="s-card" style="background:var(--bottle-bg)"><div class="num" style="color:var(--bottle-fg)">${bottleMl}<span style="font-size:11px">mL</span></div><div class="label">bottle</div></div>
-    <div class="s-card" style="background:var(--pump-bg)"><div class="num" style="color:var(--pump-fg)">${pumpMl}<span style="font-size:11px">mL</span></div><div class="label">pumped</div></div>
+    <div class="s-card" style="background:var(--nurse-bg)"><div class="num" style="color:var(--nurse-fg)">${nurseMin}<span style="font-size:11px">min</span></div><div class="label">${nurseEntries.length} sessions</div></div>
+    <div class="s-card" style="background:var(--bottle-bg)"><div class="num" style="color:var(--bottle-fg)">${bottleMl}<span style="font-size:11px">mL</span></div><div class="label">${bottleEntries.length} feeds</div></div>
+    <div class="s-card" style="background:var(--pump-bg)"><div class="num" style="color:var(--pump-fg)">${pumpMl}<span style="font-size:11px">mL</span></div><div class="label">${pumpEntries.length} sessions</div></div>
   </div>`;
-  let entries="";if(S.dayExpanded){dayLogs.slice().reverse().forEach(e=>{const c=EC[e.displayType]||EC.other;entries+=`<div class="entry" style="background:${c.bg};border-color:${c.accent}"><div class="info"><div class="sum" style="font-size:13px">${sumText(e)}</div></div><div style="font-size:11px;color:var(--muted)">${e.time}</div></div>`;});}
-  return `<div class="modal-bg" onclick="closeDay()"><div class="modal" onclick="event.stopPropagation()"><div style="display:flex;align-items:center;margin-bottom:16px"><div class="modal-title" style="flex:1">${nice}</div><button class="modal-close" onclick="closeDay()">✕</button></div>${stats}<button onclick="toggleDayExpand()" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 4px;border-top:1px solid var(--divider);font-size:14px;font-weight:600;color:var(--text)">Full history<span style="transform:rotate(${S.dayExpanded?180:0}deg);transition:.2s">▾</span></button>${entries}</div></div>`;
+  let entries="";
+  const reversed=dayLogs.slice().reverse();
+  if(S.dayExpanded){
+    reversed.forEach(e=>{const c=EC[e.displayType]||EC.other;entries+=`<div class="entry" style="background:${c.bg};border-color:${c.accent}"><div class="info"><div class="sum" style="font-size:13px">${sumText(e)}</div></div><div style="font-size:11px;color:var(--muted)">${e.time}</div></div>`;});
+  }
+  const chevron=S.dayExpanded?"▴":"▾";
+  const historyBtn=dayLogs.length>0?`<button onclick="toggleDayExpand()" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 4px;border-top:1px solid var(--divider);font-size:14px;font-weight:600;color:var(--text);background:none;border-bottom:none;border-left:none;border-right:none;cursor:pointer">Full history (${dayLogs.length})<span>${chevron}</span></button>`:"<div style='text-align:center;padding:20px;color:var(--muted);font-size:13px'>No activity logged</div>";
+  return `<div class="modal-bg" onclick="closeDay()"><div class="modal" onclick="event.stopPropagation()"><div style="display:flex;align-items:center;margin-bottom:16px"><div class="modal-title" style="flex:1">${title}</div><button class="modal-close" onclick="closeDay()">✕</button></div>${stats}${historyBtn}${entries}</div></div>`;
 }
 
 function render(){
@@ -203,8 +219,10 @@ function setMl(v){document.getElementById("f-ml").textContent=v;}
 function setMin(v){document.getElementById("f-mins").textContent=v;}
 function setPump(v){document.getElementById("f-pump").textContent=v;}
 function showMore(){S.showCount+=10;render();}
-function openDay(ds){S.selectedDay=ds;S.dayExpanded=false;render();}
-function closeDay(){S.selectedDay=null;render();}
+function openDay(ds){S.selectedDay=ds;S.selectedRange=null;S.dayExpanded=false;render();}
+function openYesterday(){const d=new Date();d.setDate(d.getDate()-1);S.selectedDay=toDate(d);S.selectedRange=null;S.dayExpanded=false;render();}
+function openLast12h(){S.selectedDay=null;S.selectedRange="12h";S.dayExpanded=false;render();}
+function closeDay(){S.selectedDay=null;S.selectedRange=null;render();}
 function toggleDayExpand(){S.dayExpanded=!S.dayExpanded;render();}
 function saveDiaper(){if(!formPee&&!formPoop)return;const d=new Date(document.getElementById("f-time").value);addEntry({date:toDate(d),time:toTime(d),pee:formPee?"X":"",poop:formPoop?"X":""});formPee=false;formPoop=false;}
 function saveBreast(){const mins=document.getElementById("f-mins").textContent;const d=new Date(document.getElementById("f-time").value);addEntry({date:toDate(d),time:toTime(d),breastLength:mins+" min",side:formSide});formSide="Left";}
