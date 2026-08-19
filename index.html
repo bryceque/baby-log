@@ -43,10 +43,22 @@ h1,h2,h3,h4{font-family:var(--font-h);font-weight:400}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
 .feed-timer.warn{color:var(--yellow)}.feed-timer.danger{color:var(--red);animation:pulse 2s infinite}
 .summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.s-card{border-radius:var(--radius);padding:14px 10px;text-align:center;position:relative}
+.s-card{border-radius:var(--radius);position:relative;overflow:hidden}
+.s-card-scroll{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.s-card-scroll::-webkit-scrollbar{display:none}
+.s-card-slide{min-width:100%;scroll-snap-align:start;padding:14px 10px;text-align:center;flex-shrink:0}
 .s-card .num{font-size:22px;font-weight:700;font-family:var(--font-h)}
 .s-card .label{font-size:11px;color:var(--muted);margin-top:2px}
 .s-card .sub{font-size:10px;color:var(--mutedLight);margin-top:3px;line-height:1.4}
+.progress-slide{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.progress-slide .p-label{font-size:11px;font-weight:600;color:var(--muted)}
+.progress-slide .p-target{font-size:10px;color:var(--mutedLight)}
+.progress-bar{width:80%;height:10px;border-radius:5px;background:rgba(0,0,0,.08);overflow:hidden;position:relative}
+.progress-fill{height:100%;border-radius:5px;transition:width .3s}
+.progress-num{font-family:var(--font-h);font-size:20px;font-weight:700}
+.dots{display:flex;gap:4px;justify-content:center;position:absolute;bottom:6px;left:0;right:0}
+.dots span{width:5px;height:5px;border-radius:50%;background:rgba(0,0,0,.15)}
+.dots span.active{background:rgba(0,0,0,.4)}
 .status-dot{position:absolute;top:10px;right:10px;width:11px;height:11px;border-radius:50%;cursor:pointer;border:2px solid rgba(255,255,255,.6)}
 .status-dot.green{background:var(--green);box-shadow:0 0 6px var(--green)}
 .status-dot.yellow{background:var(--yellow);box-shadow:0 0 6px var(--yellow)}
@@ -276,21 +288,54 @@ function restoreEntry(idx){const e=S.recentlyDeleted.splice(idx,1)[0];if(!e)retu
 function renderSetup(){if(getBirthDate())return "";return `<div class="setup-modal"><div class="setup-box"><h2>👶 Welcome!</h2><p>When was your baby born?</p><input type="date" id="birth-input" value="${new Date().toISOString().slice(0,10)}"><br><button onclick="saveBirth()">Get Started</button></div></div>`;}
 function saveBirth(){const v=document.getElementById("birth-input").value;if(v){setBirthDate(v);render();}}
 function renderFeedTimer(){const f=getLastFeedInfo();if(!f)return `<div class="feed-timer">No feeds logged yet</div>`;return `<div class="feed-timer ${f.cls}">Last ${f.type} <span class="time-val">${f.text}</span> ago</div>`;}
+function progressBar(current,target,color,label,targetLabel){
+  const pct=Math.min(100,Math.round((current/target)*100));
+  let fillColor="var(--green)";if(pct<100&&pct>=70)fillColor="var(--yellow)";else if(pct<70)fillColor="var(--red)";
+  if(color)fillColor=color;
+  return `<div class="progress-slide"><div class="progress-num" style="color:${fillColor}">${current}<span style="font-size:12px">/${target}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${fillColor}"></div></div><div class="p-label">${label}</div><div class="p-target">${targetLabel}</div></div>`;
+}
+function swipeCard(bg,dotColor,dotClick,slide1,slide2){
+  return `<div class="s-card" style="background:${bg}"><div class="status-dot ${dotColor}" onclick="${dotClick}"></div><div class="s-card-scroll"><div class="s-card-slide">${slide1}</div><div class="s-card-slide">${slide2}</div></div><div class="dots"><span class="active"></span><span></span></div></div>`;
+}
 function renderSummary(){
-  const today=toDate(new Date()),all=S.logs,t=all.filter(l=>l.date===today);
+  const today=toDate(new Date()),age=babyAgeDays(),all=S.logs,t=all.filter(l=>l.date===today);
   const ds=getStatus("diaper"),ns=getStatus("nurse"),bs=getStatus("bottle"),ps=getStatus("pump");
+  // Diaper
+  const wet=t.filter(l=>l.pee).length;
   const diapers=t.filter(l=>l.displayType==="diaper").length;
+  const wetTarget=Math.min(age,6);
+  const dSlide1=`<div class="num" style="color:var(--diaper-fg)">${diapers}</div><div class="label">diapers today</div>`;
+  const dSlide2=progressBar(wet,wetTarget,null,"wet diapers",`Day ${age} goal: ${wetTarget}+`);
+  // Nurse
+  const cutoff24=Date.now()-24*3600000;
+  const nurseSessions=all.filter(l=>l.displayType==="breast"&&parseEntryDate(l)>=cutoff24).length;
   const lastNurse=all.filter(l=>l.displayType==="breast").sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
-  const nBig=lastNurse?(lastNurse.side||"?"):"—";let nSub="";if(lastNurse)nSub=`<div class="sub">${lastNurse.breastLength} · ${timeSince(lastNurse.date,lastNurse.time)}</div>`;
+  const nBig=lastNurse?(lastNurse.side||"?"):"—";
+  let nSub="";if(lastNurse)nSub=`<div class="sub">${lastNurse.breastLength} · ${timeSince(lastNurse.date,lastNurse.time)}</div>`;
+  const nSlide1=`<div class="num" style="color:var(--nurse-fg)">${nBig}</div><div class="label">last side</div>${nSub}`;
+  const nSlide2=progressBar(nurseSessions,8,null,"sessions (24h)","Goal: 8-12 feeds");
+  // Bottle
   const bMl=t.filter(l=>l.displayType==="formula"||l.displayType==="breastmilk").reduce((s,l)=>{const m=(l.formulaAmount||l.breastMilkAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);
+  let bTarget=60;if(age<=1)bTarget=10;else if(age<=2)bTarget=15;else if(age<=3)bTarget=30;else if(age<=7)bTarget=60;else bTarget=150;
+  const bSlide1=`<div class="num" style="color:var(--bottle-fg)">${(bMl/29.5735).toFixed(1)}<span style="font-size:11px"> oz</span></div><div class="label">bottle today · ${bMl} mL</div>`;
+  const bSlide2=progressBar(bMl,bTarget,null,"mL today",`Day ${age} target: ~${bTarget} mL`);
+  // Pump
   const pMl=t.filter(l=>l.displayType==="pump").reduce((s,l)=>{const m=(l.pumpAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);
+  let avg3=0,days3=0;for(let i=1;i<=3;i++){const d=new Date();d.setDate(d.getDate()-i);const dds=toDate(d);const ml=all.filter(l=>l.displayType==="pump"&&l.date===dds).reduce((s,l)=>{const m=(l.pumpAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);if(ml>0){avg3+=ml;days3++;}}avg3=days3>0?Math.round(avg3/days3):0;
+  const pTarget=avg3||pMl||100;
+  const pSlide1=`<div class="num" style="color:var(--pump-fg)">${(pMl/29.5735).toFixed(1)}<span style="font-size:11px"> oz</span></div><div class="label">pumped today · ${pMl} mL</div>`;
+  const pSlide2=progressBar(pMl,pTarget,null,"mL today",avg3?`3-day avg: ${avg3} mL`:"Keep pumping!");
+  // Feeding score
   const fs=getFeedingScore();
+  const fsSlide1=`<div class="num" style="color:var(--accent)">${fs.count}</div><div class="label">total feeds (24h)${fs.ml>0?" · "+fs.ml+" mL bottle":""}</div>`;
+  const fsSlide2=progressBar(fs.count,8,null,"feeds (24h)","Goal: 8-12 feeds");
+
   return `<div class="summary">
-    <div class="s-card" style="background:var(--diaper-bg)"><div class="status-dot ${ds.color}" onclick="S.statusModal='diaper';render()"></div><div class="num" style="color:var(--diaper-fg)">${diapers}</div><div class="label">diapers today</div></div>
-    <div class="s-card" style="background:var(--nurse-bg)"><div class="status-dot ${ns.color}" onclick="S.statusModal='nurse';render()"></div><div class="num" style="color:var(--nurse-fg)">${nBig}</div><div class="label">last side</div>${nSub}</div>
-    <div class="s-card" style="background:var(--bottle-bg)"><div class="status-dot ${bs.color}" onclick="S.statusModal='bottle';render()"></div><div class="num" style="color:var(--bottle-fg)">${(bMl/29.5735).toFixed(1)}<span style="font-size:11px"> oz</span></div><div class="label">bottle today · ${bMl} mL</div></div>
-    <div class="s-card" style="background:var(--pump-bg)"><div class="status-dot ${ps.color}" onclick="S.statusModal='pump';render()"></div><div class="num" style="color:var(--pump-fg)">${(pMl/29.5735).toFixed(1)}<span style="font-size:11px"> oz</span></div><div class="label">pumped today · ${pMl} mL</div></div>
-  </div><div class="summary"><div class="s-card" style="background:#fff8ee;grid-column:1/-1"><div class="status-dot ${fs.color}" onclick="S.statusModal='feeding';render()"></div><div class="num" style="color:var(--accent)">${fs.count}</div><div class="label">total feeds (24h) · Goal: 8-12${fs.ml>0?" · "+fs.ml+" mL bottle":""}  </div></div></div>`;
+    ${swipeCard("var(--diaper-bg)",ds.color,"S.statusModal='diaper';render()",dSlide1,dSlide2)}
+    ${swipeCard("var(--nurse-bg)",ns.color,"S.statusModal='nurse';render()",nSlide1,nSlide2)}
+    ${swipeCard("var(--bottle-bg)",bs.color,"S.statusModal='bottle';render()",bSlide1,bSlide2)}
+    ${swipeCard("var(--pump-bg)",ps.color,"S.statusModal='pump';render()",pSlide1,pSlide2)}
+  </div><div class="summary"><div class="s-card" style="background:#fff8ee"><div class="status-dot ${fs.color}" onclick="S.statusModal='feeding';render()"></div><div class="s-card-scroll"><div class="s-card-slide">${fsSlide1}</div><div class="s-card-slide">${fsSlide2}</div></div><div class="dots"><span class="active"></span><span></span></div></div></div>`;
 }
 function renderChart(){const dow=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];const counts=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const ds=toDate(d);counts.push({ds,count:S.logs.filter(l=>l.date===ds).length,isToday:i===0,dow:d.getDay()});}const mx=Math.max(1,...counts.map(c=>c.count));let bars="";counts.forEach(c=>{const sel=S.selectedDay===c.ds;const pct=c.count===0?4:Math.round((c.count/mx)*100);bars+=`<button class="chart-bar-wrap" onclick="openDay('${c.ds}')"><div style="width:100%;max-width:26px;border-radius:8px 8px 3px 3px;background:${sel?"var(--accent)":c.isToday?"#d67f48":"#f6a06b"};height:${pct}%;min-height:4px"></div><span style="font-size:9px;color:${sel?"var(--accent)":c.isToday?"#8c491a":"var(--mutedLight)"};font-weight:${c.isToday||sel?"700":"400"}">${dow[c.dow]}</span></button>`;});return `<div class="chart-wrap"><div style="display:flex;align-items:center;gap:6px;margin-bottom:12px"><span style="font-size:13px;font-weight:600;flex:1">Last 7 days</span><button onclick="openYesterday()" style="padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;background:#eee7db;color:var(--muted)">Yesterday</button><button onclick="openLast12h()" style="padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;background:#eee7db;color:var(--muted)">Last 12h</button></div><div style="display:flex;align-items:flex-end;gap:8px;height:70px">${bars}</div></div>`;}
 function renderMilestones(){const ms=getMilestones();let items="";ms.items.forEach(m=>{items+=`<div class="m-item"><div class="m-check${m.done?" done":""}">${m.done?"✓":""}</div><div>${m.text}</div></div>`;});return `<div class="milestones"><button class="milestone-toggle" onclick="S.showMilestones=!S.showMilestones;render()">📋 Day ${ms.age} Milestones <span>${S.showMilestones?"▴":"▾"}</span></button>${S.showMilestones?items:""}</div>`;}
@@ -373,6 +418,10 @@ function saveBottle(){const ml=document.getElementById("f-ml").value;const d=new
 function savePump(){const ml=document.getElementById("f-pump").value;const d=new Date(document.getElementById("f-time").value);if(S.editId)S.logs=S.logs.filter(l=>l.id!==S.editId);if(S.pumpStorage){S.storageTimers.push({type:S.pumpStorage,ml:+ml,started:Date.now()});saveStorage();}addEntry({date:toDate(d),time:toTime(d),pumpAmount:ml+" mL"});S.editId=null;S.editTime=null;S.editPump=null;S.pumpStorage="";}
 // Init
 render();syncFromSheet();if(S.pendingWrites.length>0)flushPending();
+// Dot indicator observer — runs after each render
+const origRender=render;
+function renderWithDots(){origRender();document.querySelectorAll(".s-card-scroll").forEach(scroll=>{const dots=scroll.closest(".s-card").querySelector(".dots");if(!dots)return;const spans=dots.querySelectorAll("span");scroll.addEventListener("scroll",()=>{const idx=Math.round(scroll.scrollLeft/scroll.offsetWidth);spans.forEach((s,i)=>{s.className=i===idx?"active":"";});},{passive:true});});}
+render=renderWithDots;render();
 // Live timer update
 setInterval(()=>{const el=document.querySelector(".feed-timer");if(el){const f=getLastFeedInfo();if(f){el.className="feed-timer "+(f.cls||"");el.innerHTML=`Last ${f.type} <span class="time-val">${f.text}</span> ago`;}}},60000);
 // Storage timer update
