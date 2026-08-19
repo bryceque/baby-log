@@ -13,372 +13,345 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
-  --bg:#f5ead8;--surface:#ebddc5;--surfaceLight:#fffdf9;
-  --text:#201e1d;--muted:#82796a;--mutedLight:#a19786;
-  --divider:rgba(32,30,29,.12);
-  --accent:#c67139;--accent2:#7a8a5e;
-  --diaper-bg:oklch(90% 0.035 55);--diaper-fg:oklch(34% 0.055 42);--diaper-accent:oklch(55% 0.07 48);
-  --nurse-bg:var(--accent2-100,#f0fae1);--nurse-fg:#3d472b;--nurse-accent:#8fa073;
-  --bottle-bg:oklch(90% 0.045 235);--bottle-fg:oklch(36% 0.08 235);--bottle-accent:oklch(64% 0.10 235);
-  --pump-bg:oklch(92% 0.07 95);--pump-fg:oklch(42% 0.12 85);--pump-accent:oklch(65% 0.14 90);
-  --radius:28px;--shadow:0 3px 10px rgba(46,43,37,.16);
-  --font-h:'Caprasimo',system-ui,sans-serif;--font-b:'Figtree',system-ui,sans-serif;
+--bg:#f5ead8;--surface:#ebddc5;--surfaceLight:#fffdf9;
+--text:#201e1d;--muted:#82796a;--mutedLight:#a19786;
+--divider:rgba(32,30,29,.12);
+--accent:#c67139;--accent2:#7a8a5e;
+--green:#5a9a5a;--yellow:#d4952b;--red:#c44a3f;
+--diaper-bg:oklch(90% 0.035 55);--diaper-fg:oklch(34% 0.055 42);--diaper-accent:oklch(55% 0.07 48);
+--nurse-bg:#f0fae1;--nurse-fg:#3d472b;--nurse-accent:#8fa073;
+--bottle-bg:oklch(90% 0.045 235);--bottle-fg:oklch(36% 0.08 235);--bottle-accent:oklch(64% 0.10 235);
+--pump-bg:oklch(92% 0.07 95);--pump-fg:oklch(42% 0.12 85);--pump-accent:oklch(65% 0.14 90);
+--radius:28px;--shadow:0 3px 10px rgba(46,43,37,.16);
+--font-h:'Caprasimo',system-ui,sans-serif;--font-b:'Figtree',system-ui,sans-serif;
 }
-body{background:var(--bg);color:var(--text);font-family:var(--font-b);min-height:100vh;min-height:100dvh;padding:env(safe-area-inset-top) 16px 100px;max-width:480px;margin:0 auto}
+body{background:var(--bg);color:var(--text);font-family:var(--font-b);min-height:100dvh;padding:env(safe-area-inset-top) 16px 100px;max-width:480px;margin:0 auto}
+body *{touch-action:manipulation}
 button{font-family:var(--font-b);cursor:pointer;border:none;background:none;color:inherit}
-input[type=number],input[type=datetime-local]{font-family:var(--font-b)}
+input[type=number],input[type=datetime-local],input[type=date]{font-family:var(--font-b)}
 input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 h1,h2,h3,h4{font-family:var(--font-h);font-weight:400}
-
-.header{text-align:center;padding:16px 0 14px}
-.header h1{font-size:26px;margin:0}
+.header{text-align:center;padding:16px 0 8px;position:relative}
+.header h1{font-size:26px}
 .header .name{font-size:14px;color:var(--accent);font-weight:600;margin-top:4px}
 .header .date{font-size:13px;color:var(--muted);margin-top:4px}
-.badge{display:inline-block;margin-top:8px;font-size:11px;font-weight:600;padding:4px 12px;border-radius:999px}
-
-.summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
-.s-card{border-radius:var(--radius);padding:14px 10px;text-align:center}
+.header .age{font-size:11px;color:var(--mutedLight);margin-top:2px}
+.badge{display:inline-block;margin-top:6px;font-size:11px;font-weight:600;padding:4px 12px;border-radius:999px}
+.call-btn{position:absolute;right:4px;top:16px;width:36px;height:36px;border-radius:50%;background:#eee7db;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:var(--shadow)}
+.feed-timer{text-align:center;padding:10px;margin-bottom:14px;border-radius:16px;background:#ffffff88;font-size:14px;font-weight:600}
+.feed-timer .time-val{font-family:var(--font-h);font-size:18px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.feed-timer.warn{color:var(--yellow)}.feed-timer.danger{color:var(--red);animation:pulse 2s infinite}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.s-card{border-radius:var(--radius);padding:14px 10px;text-align:center;position:relative}
 .s-card .num{font-size:22px;font-weight:700;font-family:var(--font-h)}
 .s-card .label{font-size:11px;color:var(--muted);margin-top:2px}
 .s-card .sub{font-size:10px;color:var(--mutedLight);margin-top:3px;line-height:1.4}
-
-.chart-wrap{background:#ffffffaa;border-radius:var(--radius);padding:16px 16px 12px;margin-bottom:18px;box-shadow:var(--shadow)}
+.status-dot{position:absolute;top:10px;right:10px;width:11px;height:11px;border-radius:50%;cursor:pointer;border:2px solid rgba(255,255,255,.6)}
+.status-dot.green{background:var(--green);box-shadow:0 0 6px var(--green)}
+.status-dot.yellow{background:var(--yellow);box-shadow:0 0 6px var(--yellow)}
+.status-dot.red{background:var(--red);box-shadow:0 0 6px var(--red)}
+.chart-wrap{background:#ffffffaa;border-radius:var(--radius);padding:16px 16px 12px;margin-bottom:14px;box-shadow:var(--shadow)}
 .chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;background:none;border:none;padding:0;cursor:pointer;font-family:var(--font-b)}
-
-.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.milestones{background:#ffffffaa;border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.milestone-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;font-size:13px;font-weight:700;color:var(--text)}
+.m-item{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--divider);font-size:13px;line-height:1.4}
+.m-check{width:20px;height:20px;border-radius:6px;border:2px solid #ccc;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;margin-top:1px}
+.m-check.done{background:var(--green);border-color:var(--green);color:#fff}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
 .act-btn{padding:18px 6px;border-radius:var(--radius);display:flex;flex-direction:column;align-items:center;gap:8px;font-weight:700;font-size:13px}
-
 .form-card{background:var(--surfaceLight);border-radius:var(--radius);padding:20px;margin-bottom:20px;box-shadow:var(--shadow)}
 .form-header{display:flex;align-items:center;margin-bottom:18px}
 .back-btn{display:flex;align-items:center;gap:2px;color:var(--muted);font-size:14px;font-weight:600;padding:4px 0}
 .form-title{flex:1;text-align:center;font-family:var(--font-h);font-size:16px;margin-right:56px}
 .form-row{display:flex;gap:10px;justify-content:center;margin-bottom:18px;flex-wrap:wrap}
-
 .pill{padding:10px 18px;border-radius:999px;font-size:14px;font-weight:600;border:2px solid transparent}
 .pill.on{border-color:currentColor}
-
 .stepper{display:flex;align-items:center;gap:6px;justify-content:center;margin-bottom:14px}
 .stepper button{width:38px;height:40px;border-radius:12px;background:#eee7db;font-size:18px;color:var(--text);touch-action:manipulation}
-.stepper .val{width:70px;text-align:center;padding:8px 4px;border-radius:12px;background:#fff;border:2px solid #dcd3c4;font-size:20px;font-weight:700;font-family:var(--font-h);-moz-appearance:textfield;touch-action:manipulation}
+.stepper .val{width:70px;text-align:center;padding:8px 4px;border-radius:12px;background:#fff;border:2px solid #dcd3c4;font-size:20px;font-weight:700;font-family:var(--font-h);-moz-appearance:textfield}
 .stepper .unit{color:var(--muted);font-size:13px}
-body *{touch-action:manipulation}
-
 .quick{display:flex;gap:6px;justify-content:center;margin-bottom:18px}
 .quick button{padding:4px 12px;border-radius:999px;font-size:11px;font-weight:600;background:#eee7db;color:var(--muted)}
-
 .time-row{display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:20px}
 .time-row input{padding:8px 12px;border-radius:10px;border:1px solid #dcd3c4;background:#fff;color:var(--text);font-size:14px}
-
 .btn-row{display:flex;gap:10px;justify-content:center}
 .cancel-btn{padding:8px 16px;border-radius:999px;color:var(--accent);font-size:14px;font-family:var(--font-h)}
 .save-btn{padding:12px 32px;border-radius:999px;font-size:15px;font-weight:700;color:#fff}
-
+.stool-row{display:flex;gap:8px;justify-content:center;margin-bottom:16px}
+.stool-dot{width:32px;height:32px;border-radius:50%;border:3px solid transparent;cursor:pointer}
+.stool-dot.on{border-color:var(--text);transform:scale(1.15)}
 .history-title{margin:6px 0 12px 2px;font-size:14px;font-weight:700;color:var(--muted);font-family:var(--font-h)}
 .entry{display:flex;align-items:center;gap:12px;padding:13px 15px;border-radius:14px;margin-bottom:8px;border-left:4px solid;user-select:none;-webkit-user-select:none;transition:transform .15s}
-.entry.pressed{transform:scale(0.97)}
-.entry .info{flex:1}
-.entry .sum{font-size:14px;font-weight:600}
-.entry .time{font-size:12px;color:var(--muted);margin-top:3px}
-.entry .sync-tag{font-size:9px;padding:1px 6px;margin-left:6px;border:1px solid var(--accent);color:var(--accent);border-radius:999px}
+.entry .info{flex:1}.entry .sum{font-size:14px;font-weight:600}.entry .time{font-size:12px;color:var(--muted);margin-top:3px}
 .entry .spinner{width:18px;height:18px;border:2px solid var(--mutedLight);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
-
-.ctx-menu{position:fixed;z-index:60;background:var(--surfaceLight);border-radius:16px;box-shadow:0 8px 32px rgba(32,30,29,.28);padding:6px;min-width:180px;overflow:hidden}
+.show-more{display:block;margin:8px auto;padding:8px 20px;border-radius:999px;color:var(--accent);font-size:14px;font-family:var(--font-h)}
+.deleted-section{margin-top:24px;padding-top:16px;border-top:1px solid var(--divider)}
+.deleted-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;padding:8px 2px;font-size:13px;font-weight:600;color:var(--mutedLight)}
+.deleted-entry{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;margin-bottom:6px;background:#eee7db;opacity:.6}
+.deleted-entry .info{flex:1}.deleted-entry .sum{font-size:13px;font-weight:600;color:var(--muted)}.deleted-entry .time{font-size:11px;color:var(--mutedLight);margin-top:2px}
+.restore-btn{padding:6px 12px;border-radius:999px;font-size:11px;font-weight:600;background:var(--accent2);color:#fff;flex-shrink:0}
+.storage-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;margin-bottom:6px;background:var(--pump-bg);font-size:12px}
+.storage-card .s-info{flex:1}.storage-card .s-time{font-family:var(--font-h);font-size:14px}
+.ctx-menu{position:fixed;z-index:60;background:var(--surfaceLight);border-radius:16px;box-shadow:0 8px 32px rgba(32,30,29,.28);padding:6px;min-width:180px}
 .ctx-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;font-size:14px;font-weight:600;width:100%;text-align:left}
 .ctx-item:active{background:#eee7db}
 .ctx-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px}
 .ctx-sep{height:1px;background:var(--divider);margin:2px 8px}
 .ctx-overlay{position:fixed;inset:0;z-index:55;background:rgba(32,30,29,.3)}
-
 .confirm-modal{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;background:rgba(32,30,29,.45)}
 .confirm-box{background:var(--surfaceLight);border-radius:var(--radius);padding:24px 20px;max-width:300px;width:90%;text-align:center;box-shadow:0 12px 40px rgba(32,30,29,.3)}
 .confirm-box h3{font-family:var(--font-h);font-size:17px;margin-bottom:6px}
 .confirm-box p{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.4}
 .confirm-btns{display:flex;gap:10px;justify-content:center}
 .confirm-btns button{padding:10px 22px;border-radius:999px;font-size:14px;font-weight:700}
-.empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px;background:#ffffff88;border-radius:var(--radius)}
-.show-more{display:block;margin:8px auto;padding:8px 20px;border-radius:999px;color:var(--accent);font-size:14px;font-family:var(--font-h)}
-.deleted-section{margin-top:24px;padding-top:16px;border-top:1px solid var(--divider)}
-.deleted-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;padding:8px 2px;font-size:13px;font-weight:600;color:var(--mutedLight)}
-.deleted-entry{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;margin-bottom:6px;background:#eee7db;opacity:.6}
-.deleted-entry .info{flex:1}
-.deleted-entry .sum{font-size:13px;font-weight:600;color:var(--muted)}
-.deleted-entry .time{font-size:11px;color:var(--mutedLight);margin-top:2px}
-.restore-btn{padding:6px 12px;border-radius:999px;font-size:11px;font-weight:600;background:var(--accent2);color:#fff;flex-shrink:0}
-
 .modal-bg{position:fixed;inset:0;background:rgba(32,30,29,.45);display:flex;align-items:flex-end;justify-content:center;z-index:50}
 .modal{width:100%;max-width:480px;max-height:85vh;overflow-y:auto;background:var(--surfaceLight);border-radius:var(--radius) var(--radius) 0 0;padding:22px 20px 28px;box-shadow:0 -12px 32px rgba(32,30,29,.22)}
 .modal-title{font-family:var(--font-h);font-size:18px}
 .modal-close{width:32px;height:32px;border-radius:999px;background:#eee7db;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.status-panel{padding:16px;border-radius:16px;margin-bottom:12px}
+.status-panel h4{font-size:15px;margin-bottom:8px}
+.status-panel p{font-size:13px;line-height:1.5;color:var(--muted);margin-bottom:6px}
+.status-panel .guideline{font-size:12px;font-style:italic;color:var(--mutedLight);border-left:3px solid;padding-left:10px;margin:10px 0}
+.status-panel .action{font-size:13px;font-weight:600;margin-top:8px}
+.call-ref h4{font-size:14px;font-family:var(--font-h);margin:14px 0 8px;color:var(--text)}
+.call-ref ul{padding-left:18px;margin-bottom:8px}
+.call-ref li{font-size:12px;line-height:1.5;color:var(--muted);margin-bottom:4px}
+.call-ref .emergency{color:var(--red);font-weight:600}
+.empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px;background:#ffffff88;border-radius:var(--radius)}
+.setup-modal{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;background:rgba(32,30,29,.6)}
+.setup-box{background:var(--surfaceLight);border-radius:var(--radius);padding:28px 24px;max-width:320px;width:90%;text-align:center;box-shadow:0 12px 40px rgba(32,30,29,.3)}
+.setup-box h2{font-family:var(--font-h);font-size:20px;margin-bottom:6px}
+.setup-box p{font-size:13px;color:var(--muted);margin-bottom:16px}
+.setup-box input{padding:10px 14px;border-radius:12px;border:2px solid #dcd3c4;background:#fff;font-size:16px;width:100%;text-align:center;margin-bottom:16px}
+.setup-box button{padding:12px 32px;border-radius:999px;font-size:15px;font-weight:700;color:#fff;background:var(--accent)}
 </style>
 </head>
 <body>
 <div id="app"></div>
 <script>
 const SCRIPT_URL="https://script.google.com/macros/s/AKfycbyKhhzpzd7kcYYuWquEimol3DFPIiav44dwwH0RREujfyOO9-QWLGm6dIr84FjByrC6/exec";
-const S={logs:JSON.parse(localStorage.getItem("bl-logs")||"[]"),form:null,syncing:false,confirmDel:null,showCount:5,pendingWrites:JSON.parse(localStorage.getItem("bl-pending")||"[]"),selectedDay:null,selectedRange:null,dayExpanded:false,ctxMenu:null,ctxX:0,ctxY:0,editId:null,editTime:null,editMins:null,editMl:null,editPump:null,recentlyDeleted:JSON.parse(localStorage.getItem("bl-deleted")||"[]"),showDeleted:false};
+const S={logs:JSON.parse(localStorage.getItem("bl-logs")||"[]"),form:null,syncing:false,confirmDel:null,showCount:5,pendingWrites:JSON.parse(localStorage.getItem("bl-pending")||"[]"),selectedDay:null,selectedRange:null,dayExpanded:false,ctxMenu:null,ctxX:0,ctxY:0,editId:null,editTime:null,editMins:null,editMl:null,editPump:null,recentlyDeleted:JSON.parse(localStorage.getItem("bl-deleted")||"[]"),showDeleted:false,statusModal:null,callRef:false,showMilestones:true,storageTimers:JSON.parse(localStorage.getItem("bl-storage")||"[]")};
+// Birth date
+function getBirthDate(){return localStorage.getItem("babyBirthDate")}
+function setBirthDate(d){localStorage.setItem("babyBirthDate",d)}
+function babyAgeDays(){const b=getBirthDate();if(!b)return 1;const bd=new Date(b+"T00:00:00");const now=new Date();return Math.max(1,Math.floor((now-bd)/86400000)+1);}
+// Utils
 function save(){localStorage.setItem("bl-logs",JSON.stringify(S.logs))}
 function savePending(){localStorage.setItem("bl-pending",JSON.stringify(S.pendingWrites))}
+function saveStorage(){localStorage.setItem("bl-storage",JSON.stringify(S.storageTimers))}
 function toDate(d){return `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`}
 function toTime(d){const h=d.getHours(),m=d.getMinutes().toString().padStart(2,"0");return `${h%12||12}:${m} ${h>=12?"PM":"AM"}`}
 function toISO(d){return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16)}
-function timeSince(ds,ts){if(!ts||!ds)return "";try{const tp=ts.match(/(\d+):(\d+)\s*(AM|PM)?/i);if(!tp)return "";let h=+tp[1];const m=+tp[2],ap=(tp[3]||"").toUpperCase();if(ap==="PM"&&h!==12)h+=12;if(ap==="AM"&&h===12)h=0;const dp=ds.split("/");if(dp.length!==3)return "";const d=new Date(+dp[2],+dp[0]-1,+dp[1],h,m);if(isNaN(d))return "";const mins=Math.floor((Date.now()-d)/60000);if(mins<0)return "";if(mins<1)return "just now";if(mins<60)return mins+"m ago";const hrs=Math.floor(mins/60);if(hrs<24)return hrs+"h "+(mins%60)+"m ago";return Math.floor(hrs/24)+"d ago";}catch{return "";}}
-function shortTime(ds,ts){return ts&&ds?ts+" · "+timeSince(ds,ts):"";}
-function classify(e){if(e.pee||e.poop)return "diaper";if(e.breastLength)return "breast";if(e.formulaAmount)return "formula";if(e.breastMilkAmount)return "breastmilk";if(e.pumpAmount)return "pump";return "other";}
-function parseEntryDate(e){if(!e.date||!e.time)return 0;try{const tp=e.time.match(/(\d+):(\d+)\s*(AM|PM)?/i);if(!tp)return 0;let h=+tp[1];const m=+tp[2],ap=(tp[3]||"").toUpperCase();if(ap==="PM"&&h!==12)h+=12;if(ap==="AM"&&h===12)h=0;const dp=e.date.split("/");if(dp.length!==3)return 0;return new Date(+dp[2],+dp[0]-1,+dp[1],h,m).getTime();}catch{return 0;}}
+function timeSince(ds,ts){if(!ts||!ds)return "";try{const tp=ts.match(/(\d+):(\d+)\s*(AM|PM)?/i);if(!tp)return "";let h=+tp[1];const m=+tp[2],ap=(tp[3]||"").toUpperCase();if(ap==="PM"&&h!==12)h+=12;if(ap==="AM"&&h===12)h=0;const dp=ds.split("/");const d=new Date(+dp[2],+dp[0]-1,+dp[1],h,m);if(isNaN(d))return "";const mins=Math.floor((Date.now()-d)/60000);if(mins<0)return "";if(mins<1)return "just now";if(mins<60)return mins+"m ago";const hrs=Math.floor(mins/60);if(hrs<24)return hrs+"h "+(mins%60)+"m ago";return Math.floor(hrs/24)+"d ago";}catch{return "";}}
+function parseEntryDate(e){if(!e.date||!e.time)return 0;try{const tp=e.time.match(/(\d+):(\d+)\s*(AM|PM)?/i);if(!tp)return 0;let h=+tp[1];const m=+tp[2],ap=(tp[3]||"").toUpperCase();if(ap==="PM"&&h!==12)h+=12;if(ap==="AM"&&h===12)h=0;const dp=e.date.split("/");return new Date(+dp[2],+dp[0]-1,+dp[1],h,m).getTime();}catch{return 0;}}
 function sortLogs(){S.logs.sort((a,b)=>parseEntryDate(b)-parseEntryDate(a));}
-function dedupKey(e){
-  // Normalize: strip spaces, lowercase, just core identity
-  const d=(e.date||"").trim();
-  const t=(e.time||"").replace(/\s+/g," ").trim();
-  const tp=e.displayType||classify(e);
-  return [d,t,tp].join("|");
-}
-function dedup(){
-  // Keep first occurrence (newest by sort position), remove later dupes
-  const seen=new Map();
-  const keep=[];
-  for(const e of S.logs){
-    const k=dedupKey(e);
-    if(!seen.has(k)){seen.set(k,e);keep.push(e);}
-    else{
-      // Keep the one that's synced/fromSheet over the local one
-      const existing=seen.get(k);
-      if(!existing.synced&&!existing.fromSheet&&(e.synced||e.fromSheet)){
-        // Replace the kept one with this synced version
-        const idx=keep.indexOf(existing);
-        if(idx>=0){keep[idx]=e;seen.set(k,e);}
-      }
-      // Otherwise discard this duplicate
-    }
+function classify(e){if(e.pee||e.poop)return "diaper";if(e.breastLength)return "breast";if(e.formulaAmount)return "formula";if(e.breastMilkAmount)return "breastmilk";if(e.pumpAmount)return "pump";return "other";}
+const EC={diaper:{accent:"var(--diaper-accent)",bg:"var(--diaper-bg)",fg:"var(--diaper-fg)"},breast:{accent:"var(--nurse-accent)",bg:"var(--nurse-bg)",fg:"var(--nurse-fg)"},formula:{accent:"var(--bottle-accent)",bg:"var(--bottle-bg)",fg:"var(--bottle-fg)"},breastmilk:{accent:"var(--bottle-accent)",bg:"var(--bottle-bg)",fg:"var(--bottle-fg)"},pump:{accent:"var(--pump-accent)",bg:"var(--pump-bg)",fg:"var(--pump-fg)"},other:{accent:"var(--mutedLight)",bg:"#eee7db",fg:"var(--muted)"}};
+function sumText(e){if(e.displayType==="diaper"){const p=[];if(e.pee)p.push("💧 Pee");if(e.poop)p.push("💩 Poop");let t=p.join(" + ");if(e.stoolColor)t+=" ("+e.stoolColor+")";return t;}if(e.displayType==="breast")return `🤱 ${e.side||"?"} · ${e.breastLength}`;if(e.displayType==="formula")return `🍼 Formula · ${e.formulaAmount}`;if(e.displayType==="breastmilk")return `🍼 Breast Milk · ${e.breastMilkAmount}`;if(e.displayType==="pump")return `🥛 Pumped · ${e.pumpAmount}`;return "📝 Entry";}
+function dedupKey(e){return [(e.date||"").trim(),(e.time||"").replace(/\s+/g," ").trim(),e.displayType||classify(e)].join("|");}
+function dedup(){const seen=new Map(),keep=[];for(const e of S.logs){const k=dedupKey(e);if(!seen.has(k)){seen.set(k,e);keep.push(e);}else{const ex=seen.get(k);if(!ex.synced&&!ex.fromSheet&&(e.synced||e.fromSheet)){const i=keep.indexOf(ex);if(i>=0){keep[i]=e;seen.set(k,e);}}}}S.logs=keep;}
+// Status logic
+function getStatus(type){
+  const today=toDate(new Date()),age=babyAgeDays(),now=new Date(),hr=now.getHours();
+  const all=S.logs,todayLogs=all.filter(l=>l.date===today);
+  if(type==="diaper"){
+    const wet=todayLogs.filter(l=>l.pee).length;
+    const target=Math.min(age,6);
+    let reason="",guideline=`Kaiser: at least ${target} wet diaper${target>1?"s":""} on day ${age}`,action="";
+    if(wet>=target+1)return {color:"green",label:"On Track",reason:`${wet} wet diapers today — above target`,guideline,action:""};
+    if(wet>=target)return {color:wet===target?"yellow":"green",label:wet===target?"Borderline":"On Track",reason:`${wet} wet diaper${wet>1?"s":""} today — ${wet===target?"exactly at":"meets"} minimum`,guideline,action:wet===target?"Keep feeding regularly and monitor":""}; 
+    if(hr>=18)return {color:"red",label:"Needs Attention",reason:`Only ${wet} wet diaper${wet!==1?"s":""} today and it's evening — below the ${target} target`,guideline,action:"Consider calling your baby's doctor if count doesn't improve"};
+    if(wet===0&&hr>=12)return {color:"red",label:"Needs Attention",reason:"No wet diapers by midday",guideline,action:"Call your baby's doctor"};
+    return {color:"yellow",label:"Monitor",reason:`${wet} wet diaper${wet!==1?"s":""} so far — target is ${target}, still time today`,guideline,action:"Feed frequently and monitor"};
   }
-  S.logs=keep;
+  if(type==="nurse"){
+    const cutoff=Date.now()-24*3600000;
+    const sessions=all.filter(l=>l.displayType==="breast"&&parseEntryDate(l)>=cutoff);
+    const ct=sessions.length;
+    const lastNurse=all.filter(l=>l.displayType==="breast").sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
+    const lastMs=lastNurse?Date.now()-parseEntryDate(lastNurse):Infinity;
+    const lastHrs=lastMs/3600000;
+    const guideline="Kaiser: baby should eat 8-12 times in 24 hours, every 2-3 hours";
+    if(lastHrs>=4)return {color:"red",label:"Needs Attention",reason:`Last nursing session was ${Math.floor(lastHrs)}h ago — baby shouldn't go 4+ hours without eating`,guideline,action:"Try to feed baby soon"};
+    if(ct<6)return {color:"red",label:"Needs Attention",reason:`Only ${ct} nursing sessions in 24 hours — well below the 8-12 target`,guideline,action:"Increase feeding frequency. If baby won't latch, call your doctor"};
+    if(lastHrs>=3)return {color:"yellow",label:"Monitor",reason:`Last feed was ${Math.floor(lastHrs)}h ago — approaching the 3-hour mark`,guideline,action:"Consider offering a feed soon"};
+    if(ct<8)return {color:"yellow",label:"Monitor",reason:`${ct} sessions in 24 hours — below the 8-12 target`,guideline,action:"Try to increase feeding frequency"};
+    return {color:"green",label:"On Track",reason:`${ct} sessions in 24 hours — right on target`,guideline,action:""};
+  }
+  if(type==="bottle"){
+    const feeds=todayLogs.filter(l=>l.displayType==="formula"||l.displayType==="breastmilk");
+    const totalMl=feeds.reduce((s,l)=>{const m=(l.formulaAmount||l.breastMilkAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);
+    const lastBottle=all.filter(l=>l.displayType==="formula"||l.displayType==="breastmilk").sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
+    const lastHrs=lastBottle?(Date.now()-parseEntryDate(lastBottle))/3600000:Infinity;
+    let expPerFeed="2-10";if(age>=4)expPerFeed="30-60";else if(age>=3)expPerFeed="15-30";else if(age>=2)expPerFeed="5-15";
+    const guideline=`Kaiser: ${expPerFeed} mL per feeding on day ${age}`;
+    if(feeds.length===0&&todayLogs.filter(l=>l.displayType==="breast").length>0)return {color:"green",label:"Breastfeeding",reason:"No bottle feeds today — nursing is primary",guideline:"Bottle supplements breastfeeding when needed",action:""};
+    if(lastHrs>=4)return {color:"red",label:"Needs Attention",reason:`Last bottle feed was ${Math.floor(lastHrs)}h ago`,guideline,action:"Feed baby soon"};
+    if(lastHrs>=3)return {color:"yellow",label:"Monitor",reason:`Last bottle feed was ${Math.floor(lastHrs)}h ago`,guideline,action:"Consider offering a feed"};
+    if(age>7&&totalMl<90)return {color:"red",label:"Low Intake",reason:`Only ${totalMl} mL today (${(totalMl/29.5735).toFixed(1)} oz) — below minimum`,guideline,action:"Talk to your baby's doctor about intake"};
+    if(age>7&&totalMl<150)return {color:"yellow",label:"Monitor",reason:`${totalMl} mL today (${(totalMl/29.5735).toFixed(1)} oz) — on the low side`,guideline,action:"Keep offering regular feeds"};
+    return {color:"green",label:"On Track",reason:`${totalMl} mL today (${(totalMl/29.5735).toFixed(1)} oz) — ${feeds.length} feeds`,guideline,action:""};
+  }
+  if(type==="pump"){
+    const todayPumps=todayLogs.filter(l=>l.displayType==="pump");
+    const todayMl=todayPumps.reduce((s,l)=>{const m=(l.pumpAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);
+    const lastPump=all.filter(l=>l.displayType==="pump").sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
+    const lastHrs=lastPump?(Date.now()-parseEntryDate(lastPump))/3600000:Infinity;
+    // 3-day avg
+    let avg3=0,days3=0;for(let i=1;i<=3;i++){const d=new Date();d.setDate(d.getDate()-i);const ds=toDate(d);const ml=all.filter(l=>l.displayType==="pump"&&l.date===ds).reduce((s,l)=>{const m=(l.pumpAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);if(ml>0){avg3+=ml;days3++;}}
+    avg3=days3>0?avg3/days3:0;
+    const guideline="Kaiser: pump or breastfeed every 2-3 hours to maintain supply";
+    if(lastHrs>=6)return {color:"red",label:"Session Overdue",reason:`No pump session in ${Math.floor(lastHrs)} hours — may affect supply`,guideline,action:"Pump soon to maintain supply"};
+    if(lastHrs>=4)return {color:"yellow",label:"Monitor",reason:`Last pump was ${Math.floor(lastHrs)} hours ago`,guideline,action:"Try to pump within the next hour"};
+    if(avg3>0&&todayMl<avg3*0.6)return {color:"red",label:"Low Output",reason:`${todayMl} mL today vs ${Math.round(avg3)} mL 3-day avg — significantly below`,guideline,action:"Stay hydrated, pump more frequently"};
+    if(avg3>0&&todayMl<avg3*0.8)return {color:"yellow",label:"Below Average",reason:`${todayMl} mL today vs ${Math.round(avg3)} mL 3-day avg`,guideline,action:"Consider an extra pump session"};
+    return {color:"green",label:"On Track",reason:`${todayMl} mL today (${(todayMl/29.5735).toFixed(1)} oz)${avg3>0?" — 3-day avg: "+Math.round(avg3)+" mL":""}`,guideline,action:""};
+  }
+  return {color:"green",label:"OK",reason:"",guideline:"",action:""};
 }
-async function syncFromSheet(){S.syncing=true;render();try{const r=await fetch(SCRIPT_URL);if(!r.ok)throw 0;const data=await r.json();const sheetEntries=data.map(row=>{const e={date:row["Today's Date"]||"",time:row["Time of Day"]||"",breastLength:row["Length of Breast Feeding"]||"",formulaAmount:row["Formula Amount"]||"",breastMilkAmount:row["Breast Milk Amount"]||"",side:row["Right Side/Left Side"]||"",pee:row["Pee"]||"",poop:row["Poop"]||"",pumpAmount:row["Pump Amount"]||""};if(e.date.includes("1899"))e.date="";if(e.time.includes("1899"))e.time="";e.displayType=classify(e);return e;}).filter(e=>e.date||e.time);
-// Mark local entries as synced if they match a sheet entry
-const sheetKeys=new Map();
-sheetEntries.forEach(se=>{const k=dedupKey(se);sheetKeys.set(k,(sheetKeys.get(k)||0)+1);});
-const localOnly=S.logs.filter(l=>!l.fromSheet);
-const matchedKeys=new Map();
-localOnly.forEach(l=>{const k=dedupKey(l);const avail=(sheetKeys.get(k)||0)-(matchedKeys.get(k)||0);if(avail>0){l.synced=true;matchedKeys.set(k,(matchedKeys.get(k)||0)+1);}});
-// Only add sheet entries that weren't matched to a local entry
-const newFromSheet=[];
-const usedCounts=new Map();
-sheetEntries.forEach(se=>{const k=dedupKey(se);const localMatched=matchedKeys.get(k)||0;const usedSoFar=usedCounts.get(k)||0;if(usedSoFar<localMatched){usedCounts.set(k,usedSoFar+1);}else{newFromSheet.push({...se,fromSheet:true,synced:true,id:"s-"+Math.random().toString(36).slice(2,8)});}});
-S.logs=[...localOnly,...newFromSheet];sortLogs();dedup();save();}catch(e){console.error("Sync:",e);}S.syncing=false;render();}
-async function writeToSheet(entry){S.pendingWrites.push(entry);savePending();render();flushPending();}
+function getFeedingScore(){
+  const cutoff=Date.now()-24*3600000;
+  const feeds=S.logs.filter(l=>(l.displayType==="breast"||l.displayType==="formula"||l.displayType==="breastmilk")&&parseEntryDate(l)>=cutoff);
+  const ct=feeds.length;
+  const todayBottle=S.logs.filter(l=>l.date===toDate(new Date())&&(l.displayType==="formula"||l.displayType==="breastmilk"));
+  const ml=todayBottle.reduce((s,l)=>{const m=(l.formulaAmount||l.breastMilkAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);
+  let color="green";if(ct<6)color="red";else if(ct<8)color="yellow";
+  return {count:ct,ml,color};
+}
+// Last feed timer
+function getLastFeedInfo(){
+  const feeds=S.logs.filter(l=>l.displayType==="breast"||l.displayType==="formula"||l.displayType==="breastmilk").sort((a,b)=>parseEntryDate(b)-parseEntryDate(a));
+  if(!feeds.length)return null;
+  const ms=Date.now()-parseEntryDate(feeds[0]);
+  const mins=Math.floor(ms/60000);
+  const h=Math.floor(mins/60),m=mins%60;
+  let cls="";if(mins>=180)cls="danger";else if(mins>=120)cls="warn";
+  return {text:`${h}h ${m}m`,cls,type:feeds[0].displayType==="breast"?"nursed":"bottle fed"};
+}
+// Milestones
+function getMilestones(){
+  const age=babyAgeDays(),today=toDate(new Date()),all=S.logs;
+  const todayLogs=all.filter(l=>l.date===today);
+  const wet=todayLogs.filter(l=>l.pee).length;
+  const nurseCount24=all.filter(l=>l.displayType==="breast"&&parseEntryDate(l)>=Date.now()-24*3600000).length;
+  const hasSkinToSkin=true; // Can't track this, leave unchecked
+  const items=[];
+  if(age<=1){
+    items.push({text:"Practice skin-to-skin contact",done:false});
+    items.push({text:"Attempt breastfeeding at least 8 times",done:nurseCount24>=8});
+    items.push({text:"Baby has had at least 1 wet diaper",done:wet>=1});
+  }else if(age<=2){
+    items.push({text:"Baby is more alert and feeding more often",done:false});
+    items.push({text:"At least 2 wet diapers today",done:wet>=2});
+    items.push({text:"Watch for cluster feeding (normal!)",done:false});
+  }else if(age<=3){
+    items.push({text:"Cluster feeding expected — this is normal",done:false});
+    items.push({text:"At least 3 wet diapers today",done:wet>=3});
+    items.push({text:"Milk should be coming in",done:false});
+  }else if(age<=7){
+    const target=Math.min(age,6);
+    items.push({text:`${target}+ wet diapers today`,done:wet>=target});
+    items.push({text:"Stool transitioning to yellow",done:false});
+    items.push({text:"Feeding 8-12 times per day",done:nurseCount24>=8});
+    items.push({text:"Schedule first pediatric visit",done:false});
+  }else{
+    items.push({text:"6+ wet diapers daily",done:wet>=6});
+    items.push({text:"8-12 feeds per day",done:nurseCount24>=8});
+    items.push({text:"Steady weight gain (check with doctor)",done:false});
+  }
+  return {age,items};
+}
+// Sync
+async function syncFromSheet(){S.syncing=true;render();try{const r=await fetch(SCRIPT_URL);if(!r.ok)throw 0;const data=await r.json();const sheetEntries=data.map(row=>{const e={date:row["Today's Date"]||"",time:row["Time of Day"]||"",breastLength:row["Length of Breast Feeding"]||"",formulaAmount:row["Formula Amount"]||"",breastMilkAmount:row["Breast Milk Amount"]||"",side:row["Right Side/Left Side"]||"",pee:row["Pee"]||"",poop:row["Poop"]||"",pumpAmount:row["Pump Amount"]||""};if(e.date.includes("1899"))e.date="";if(e.time.includes("1899"))e.time="";e.displayType=classify(e);return e;}).filter(e=>e.date||e.time);const sheetKeys=new Map();sheetEntries.forEach(se=>{const k=dedupKey(se);sheetKeys.set(k,(sheetKeys.get(k)||0)+1);});const localOnly=S.logs.filter(l=>!l.fromSheet);const matchedKeys=new Map();localOnly.forEach(l=>{const k=dedupKey(l);const avail=(sheetKeys.get(k)||0)-(matchedKeys.get(k)||0);if(avail>0){l.synced=true;matchedKeys.set(k,(matchedKeys.get(k)||0)+1);}});const newFromSheet=[];const usedCounts=new Map();sheetEntries.forEach(se=>{const k=dedupKey(se);const lm=matchedKeys.get(k)||0;const u=usedCounts.get(k)||0;if(u<lm){usedCounts.set(k,u+1);}else{newFromSheet.push({...se,fromSheet:true,synced:true,id:"s-"+Math.random().toString(36).slice(2,8)});}});S.logs=[...localOnly,...newFromSheet];sortLogs();dedup();save();}catch(e){console.error("Sync:",e);}S.syncing=false;render();}
+async function writeToSheet(entry){S.pendingWrites.push(entry);savePending();flushPending();}
 async function flushPending(){while(S.pendingWrites.length>0){const entry=S.pendingWrites[0];try{const p=new URLSearchParams({action:"add",date:entry.date||"",timeOfDay:entry.time||"",breastLength:entry.breastLength||"",formulaAmount:entry.formulaAmount||"",breastMilkAmount:entry.breastMilkAmount||"",side:entry.side||"",pee:entry.pee||"",poop:entry.poop||"",pumpAmount:entry.pumpAmount||""});const r=await fetch(SCRIPT_URL+"?"+p.toString());if(r.ok){S.pendingWrites.shift();savePending();render();}else break;}catch{break;}}}
 function addEntry(entry){entry.displayType=classify(entry);entry.id=Date.now().toString();S.logs.unshift(entry);sortLogs();save();S.form=null;render();writeToSheet(entry);}
-function deleteEntry(id){
-  const e=S.logs.find(l=>l.id===id);
-  if(e){
-    e.deletedAt=new Date().toISOString();
-    S.recentlyDeleted.unshift(e);
-    if(S.recentlyDeleted.length>20)S.recentlyDeleted=S.recentlyDeleted.slice(0,20);
-    localStorage.setItem("bl-deleted",JSON.stringify(S.recentlyDeleted));
-    // Delete from sheet
-    deleteFromSheet(e);
-  }
-  S.logs=S.logs.filter(l=>l.id!==id);save();S.confirmDel=null;render();
-}
-async function deleteFromSheet(e){
-  try{const p=new URLSearchParams({action:"delete",date:e.date||"",timeOfDay:e.time||""});
-  await fetch(SCRIPT_URL+"?"+p.toString());}catch(err){console.error("Sheet delete:",err);}
-}
-function saveDeleted(){localStorage.setItem("bl-deleted",JSON.stringify(S.recentlyDeleted));}
-function restoreEntry(idx){
-  const e=S.recentlyDeleted.splice(idx,1)[0];if(!e)return;
-  delete e.deletedAt;e.synced=false;e.fromSheet=false;e.id=Date.now().toString();
-  S.logs.unshift(e);sortLogs();save();saveDeleted();
-  writeToSheet(e);render();
-}
-function clearAllDeleted(){S.recentlyDeleted=[];saveDeleted();render();}
-
-const EC={diaper:{accent:"var(--diaper-accent)",bg:"var(--diaper-bg)",fg:"var(--diaper-fg)"},breast:{accent:"var(--nurse-accent)",bg:"var(--nurse-bg)",fg:"var(--nurse-fg)"},formula:{accent:"var(--bottle-accent)",bg:"var(--bottle-bg)",fg:"var(--bottle-fg)"},breastmilk:{accent:"var(--bottle-accent)",bg:"var(--bottle-bg)",fg:"var(--bottle-fg)"},pump:{accent:"var(--pump-accent)",bg:"var(--pump-bg)",fg:"var(--pump-fg)"},other:{accent:"var(--mutedLight)",bg:"#eee7db",fg:"var(--muted)"}};
-function sumText(e){if(e.displayType==="diaper"){const p=[];if(e.pee)p.push("💧 Pee");if(e.poop)p.push("💩 Poop");return p.join(" + ");}if(e.displayType==="breast")return `🤱 ${e.side||"?"} · ${e.breastLength}`;if(e.displayType==="formula")return `🍼 Formula · ${e.formulaAmount}`;if(e.displayType==="breastmilk")return `🍼 Breast Milk · ${e.breastMilkAmount}`;if(e.displayType==="pump")return `🥛 Pumped · ${e.pumpAmount}`;return "📝 Feeding";}
-
+function deleteEntry(id){const e=S.logs.find(l=>l.id===id);if(e){e.deletedAt=new Date().toISOString();S.recentlyDeleted.unshift(e);if(S.recentlyDeleted.length>20)S.recentlyDeleted=S.recentlyDeleted.slice(0,20);localStorage.setItem("bl-deleted",JSON.stringify(S.recentlyDeleted));deleteFromSheet(e);}S.logs=S.logs.filter(l=>l.id!==id);save();S.confirmDel=null;render();}
+async function deleteFromSheet(e){try{await fetch(SCRIPT_URL+"?"+new URLSearchParams({action:"delete",date:e.date||"",timeOfDay:e.time||""}).toString());}catch{}}
+async function resyncEntry(id){S.ctxMenu=null;const e=S.logs.find(l=>l.id===id);if(!e)return;e.resyncing=true;render();try{const r=await fetch(SCRIPT_URL);if(!r.ok)throw 0;const data=await r.json();const se=data.map(row=>{const s={date:row["Today's Date"]||"",time:row["Time of Day"]||""};if(s.date.includes("1899"))s.date="";if(s.time.includes("1899"))s.time="";s.displayType=classify({...s,breastLength:row["Length of Breast Feeding"]||"",formulaAmount:row["Formula Amount"]||"",breastMilkAmount:row["Breast Milk Amount"]||"",pee:row["Pee"]||"",poop:row["Poop"]||"",pumpAmount:row["Pump Amount"]||""});return s;});if(se.some(s=>dedupKey(s)===dedupKey(e))){e.synced=true;}else{await fetch(SCRIPT_URL+"?"+new URLSearchParams({action:"add",date:e.date||"",timeOfDay:e.time||"",breastLength:e.breastLength||"",formulaAmount:e.formulaAmount||"",breastMilkAmount:e.breastMilkAmount||"",side:e.side||"",pee:e.pee||"",poop:e.poop||"",pumpAmount:e.pumpAmount||""}).toString());e.synced=true;}}catch(err){console.error("Resync:",err);}e.resyncing=false;dedup();save();render();}
+function restoreEntry(idx){const e=S.recentlyDeleted.splice(idx,1)[0];if(!e)return;delete e.deletedAt;e.synced=false;e.fromSheet=false;e.id=Date.now().toString();S.logs.unshift(e);sortLogs();save();localStorage.setItem("bl-deleted",JSON.stringify(S.recentlyDeleted));writeToSheet(e);render();}
+// Render helpers
+function renderSetup(){if(getBirthDate())return "";return `<div class="setup-modal"><div class="setup-box"><h2>👶 Welcome!</h2><p>When was your baby born?</p><input type="date" id="birth-input" value="${new Date().toISOString().slice(0,10)}"><br><button onclick="saveBirth()">Get Started</button></div></div>`;}
+function saveBirth(){const v=document.getElementById("birth-input").value;if(v){setBirthDate(v);render();}}
+function renderFeedTimer(){const f=getLastFeedInfo();if(!f)return `<div class="feed-timer">No feeds logged yet</div>`;return `<div class="feed-timer ${f.cls}">Last ${f.type} <span class="time-val">${f.text}</span> ago</div>`;}
 function renderSummary(){
   const today=toDate(new Date()),all=S.logs,t=all.filter(l=>l.date===today);
+  const ds=getStatus("diaper"),ns=getStatus("nurse"),bs=getStatus("bottle"),ps=getStatus("pump");
   const diapers=t.filter(l=>l.displayType==="diaper").length;
-  const lastPee=all.filter(l=>l.pee).sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
-  const lastPoop=all.filter(l=>l.poop).sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
-  let dSub="";if(lastPee)dSub+=`<div class="sub">💧 ${shortTime(lastPee.date,lastPee.time)}</div>`;if(lastPoop)dSub+=`<div class="sub">💩 ${shortTime(lastPoop.date,lastPoop.time)}</div>`;
   const lastNurse=all.filter(l=>l.displayType==="breast").sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
-  const nBig=lastNurse?(lastNurse.side||"?"):"—";let nSub="";if(lastNurse)nSub=`<div class="sub">${lastNurse.breastLength}</div><div class="sub">${shortTime(lastNurse.date,lastNurse.time)}</div>`;
+  const nBig=lastNurse?(lastNurse.side||"?"):"—";let nSub="";if(lastNurse)nSub=`<div class="sub">${lastNurse.breastLength} · ${timeSince(lastNurse.date,lastNurse.time)}</div>`;
   const bMl=t.filter(l=>l.displayType==="formula"||l.displayType==="breastmilk").reduce((s,l)=>{const m=(l.formulaAmount||l.breastMilkAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);
-  const lastB=all.filter(l=>l.displayType==="formula"||l.displayType==="breastmilk").sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
-  let bSub="";if(lastB){bSub=`<div class="sub">Last: ${lastB.formulaAmount||lastB.breastMilkAmount}</div><div class="sub">${shortTime(lastB.date,lastB.time)}</div>`;}
   const pMl=t.filter(l=>l.displayType==="pump").reduce((s,l)=>{const m=(l.pumpAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);
-  const lastP=all.filter(l=>l.displayType==="pump").sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
-  let pSub="";if(lastP){pSub=`<div class="sub">Last: ${lastP.pumpAmount}</div><div class="sub">${shortTime(lastP.date,lastP.time)}</div>`;}
+  const fs=getFeedingScore();
   return `<div class="summary">
-    <div class="s-card" style="background:var(--diaper-bg)"><div class="num" style="color:var(--diaper-fg)">${diapers}</div><div class="label">diapers today</div>${dSub}</div>
-    <div class="s-card" style="background:var(--nurse-bg)"><div class="num" style="color:var(--nurse-fg)">${nBig}</div><div class="label">last side</div>${nSub}</div>
-    <div class="s-card" style="background:var(--bottle-bg)"><div class="num" style="color:var(--bottle-fg)">${(bMl/29.5735).toFixed(1)}<span style="font-size:11px"> oz</span></div><div class="label">bottle today · ${bMl} mL</div>${bSub}</div>
-    <div class="s-card" style="background:var(--pump-bg)"><div class="num" style="color:var(--pump-fg)">${(pMl/29.5735).toFixed(1)}<span style="font-size:11px"> oz</span></div><div class="label">pumped today · ${pMl} mL</div>${pSub}</div>
-  </div>`;
+    <div class="s-card" style="background:var(--diaper-bg)"><div class="status-dot ${ds.color}" onclick="S.statusModal='diaper';render()"></div><div class="num" style="color:var(--diaper-fg)">${diapers}</div><div class="label">diapers today</div></div>
+    <div class="s-card" style="background:var(--nurse-bg)"><div class="status-dot ${ns.color}" onclick="S.statusModal='nurse';render()"></div><div class="num" style="color:var(--nurse-fg)">${nBig}</div><div class="label">last side</div>${nSub}</div>
+    <div class="s-card" style="background:var(--bottle-bg)"><div class="status-dot ${bs.color}" onclick="S.statusModal='bottle';render()"></div><div class="num" style="color:var(--bottle-fg)">${(bMl/29.5735).toFixed(1)}<span style="font-size:11px"> oz</span></div><div class="label">bottle today · ${bMl} mL</div></div>
+    <div class="s-card" style="background:var(--pump-bg)"><div class="status-dot ${ps.color}" onclick="S.statusModal='pump';render()"></div><div class="num" style="color:var(--pump-fg)">${(pMl/29.5735).toFixed(1)}<span style="font-size:11px"> oz</span></div><div class="label">pumped today · ${pMl} mL</div></div>
+  </div><div class="summary"><div class="s-card" style="background:#fff8ee;grid-column:1/-1"><div class="status-dot ${fs.color}" onclick="S.statusModal='feeding';render()"></div><div class="num" style="color:var(--accent)">${fs.count}</div><div class="label">total feeds (24h) · Goal: 8-12${fs.ml>0?" · "+fs.ml+" mL bottle":""}  </div></div></div>`;
 }
-
-function renderChart(){
-  const dow=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];const counts=[];
-  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const ds=toDate(d);counts.push({ds,count:S.logs.filter(l=>l.date===ds).length,isToday:i===0,dow:d.getDay()});}
-  const mx=Math.max(1,...counts.map(c=>c.count));
-  let bars="";counts.forEach(c=>{const sel=S.selectedDay===c.ds;const pct=c.count===0?4:Math.round((c.count/mx)*100);
-    bars+=`<button class="chart-bar-wrap" onclick="openDay('${c.ds}')"><div style="width:100%;max-width:26px;border-radius:8px 8px 3px 3px;background:${sel?"var(--accent)":c.isToday?"#d67f48":"#f6a06b"};height:${pct}%;min-height:4px"></div><span style="font-size:9px;color:${sel?"var(--accent)":c.isToday?"#8c491a":"var(--mutedLight)"};font-weight:${c.isToday||sel?"700":"400"}">${dow[c.dow]}</span></button>`;});
-  return `<div class="chart-wrap"><div style="display:flex;align-items:center;gap:6px;margin-bottom:12px"><span style="font-size:13px;font-weight:600;flex:1">Last 7 days</span><button onclick="openYesterday()" style="padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;background:#eee7db;color:var(--muted);border:none;cursor:pointer">Yesterday</button><button onclick="openLast12h()" style="padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;background:#eee7db;color:var(--muted);border:none;cursor:pointer">Last 12 hrs</button></div><div style="display:flex;align-items:flex-end;gap:8px;height:70px">${bars}</div></div>`;
+function renderChart(){const dow=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];const counts=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const ds=toDate(d);counts.push({ds,count:S.logs.filter(l=>l.date===ds).length,isToday:i===0,dow:d.getDay()});}const mx=Math.max(1,...counts.map(c=>c.count));let bars="";counts.forEach(c=>{const sel=S.selectedDay===c.ds;const pct=c.count===0?4:Math.round((c.count/mx)*100);bars+=`<button class="chart-bar-wrap" onclick="openDay('${c.ds}')"><div style="width:100%;max-width:26px;border-radius:8px 8px 3px 3px;background:${sel?"var(--accent)":c.isToday?"#d67f48":"#f6a06b"};height:${pct}%;min-height:4px"></div><span style="font-size:9px;color:${sel?"var(--accent)":c.isToday?"#8c491a":"var(--mutedLight)"};font-weight:${c.isToday||sel?"700":"400"}">${dow[c.dow]}</span></button>`;});return `<div class="chart-wrap"><div style="display:flex;align-items:center;gap:6px;margin-bottom:12px"><span style="font-size:13px;font-weight:600;flex:1">Last 7 days</span><button onclick="openYesterday()" style="padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;background:#eee7db;color:var(--muted)">Yesterday</button><button onclick="openLast12h()" style="padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;background:#eee7db;color:var(--muted)">Last 12h</button></div><div style="display:flex;align-items:flex-end;gap:8px;height:70px">${bars}</div></div>`;}
+function renderMilestones(){const ms=getMilestones();let items="";ms.items.forEach(m=>{items+=`<div class="m-item"><div class="m-check${m.done?" done":""}">${m.done?"✓":""}</div><div>${m.text}</div></div>`;});return `<div class="milestones"><button class="milestone-toggle" onclick="S.showMilestones=!S.showMilestones;render()">📋 Day ${ms.age} Milestones <span>${S.showMilestones?"▴":"▾"}</span></button>${S.showMilestones?items:""}</div>`;}
+// Forms
+let formPee=false,formPoop=false,formSide="Left",formBottleType="breastmilk",formStoolColor="";
+const STOOL_COLORS=[{name:"Black",hex:"#1a1a1a"},{name:"Dark Green",hex:"#2d5a27"},{name:"Yellow-Green",hex:"#8fa73e"},{name:"Yellow",hex:"#d4aa2b"},{name:"Brown",hex:"#7a5230"}];
+function renderForm(){const iso=S.editTime||toISO(new Date());const isEdit=!!S.editId;const editLabel=isEdit?"Update":"Save";
+  if(S.form==="diaper"){let stoolPicker="";if(formPoop){stoolPicker=`<div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:8px">Stool color (optional)</div><div class="stool-row">${STOOL_COLORS.map(c=>`<div class="stool-dot${formStoolColor===c.name?" on":""}" style="background:${c.hex}" onclick="formStoolColor=formStoolColor==='${c.name}'?'':'${c.name}';render()"></div>`).join("")}</div>`;}return `<div class="form-card"><div class="form-header"><button class="back-btn" onclick="cancelForm()">‹ Back</button><div class="form-title" style="color:var(--diaper-fg)">${isEdit?"Edit ":""}Diaper</div></div><div class="form-row"><button class="pill${formPee?" on":""}" id="pee-btn" onclick="togglePill('pee')" style="background:${formPee?"#f0fae1":"#eee7db"};color:${formPee?"var(--accent2)":"var(--muted)"};border-color:${formPee?"var(--accent2)":"transparent"}">💧 Pee</button><button class="pill${formPoop?" on":""}" id="poop-btn" onclick="togglePill('poop')" style="background:${formPoop?"var(--diaper-bg)":"#eee7db"};color:${formPoop?"var(--diaper-fg)":"var(--muted)"};border-color:${formPoop?"var(--diaper-accent)":"transparent"}">💩 Poop</button></div>${stoolPicker}<div class="time-row"><input type="datetime-local" id="f-time" value="${iso}"></div><div class="btn-row"><button class="cancel-btn" onclick="cancelForm()">Cancel</button><button class="save-btn" style="background:var(--diaper-accent)" onclick="saveDiaper()">${editLabel}</button></div></div>`;}
+  if(S.form==="breast"){const mins=S.editMins||15;return `<div class="form-card"><div class="form-header"><button class="back-btn" onclick="cancelForm()">‹ Back</button><div class="form-title" style="color:var(--nurse-fg)">${isEdit?"Edit ":""}Nurse</div></div><div class="form-row"><button class="pill${formSide==="Left"?" on":""}" onclick="pickSide('Left')" style="color:${formSide==="Left"?"var(--accent2)":"var(--muted)"};border-color:${formSide==="Left"?"var(--accent2)":"transparent"};background:${formSide==="Left"?"#f0fae1":"#eee7db"}">◂ Left</button><button class="pill${formSide==="Both"?" on":""}" onclick="pickSide('Both')" style="color:${formSide==="Both"?"var(--accent2)":"var(--muted)"};border-color:${formSide==="Both"?"var(--accent2)":"transparent"};background:${formSide==="Both"?"#f0fae1":"#eee7db"}">Both</button><button class="pill${formSide==="Right"?" on":""}" onclick="pickSide('Right')" style="color:${formSide==="Right"?"var(--accent2)":"var(--muted)"};border-color:${formSide==="Right"?"var(--accent2)":"transparent"};background:${formSide==="Right"?"#f0fae1":"#eee7db"}">Right ▸</button></div><div class="stepper"><button onclick="stepMin(-5)">−5</button><button onclick="stepMin(-1)">−</button><input type="number" class="val" id="f-mins" value="${mins}" onchange="clampMin()" inputmode="numeric"><span class="unit">min</span><button onclick="stepMin(1)">+</button><button onclick="stepMin(5)">+5</button></div><div class="quick"><button onclick="setMin(5)">5</button><button onclick="setMin(15)">15</button><button onclick="setMin(20)">20</button></div><div class="time-row"><input type="datetime-local" id="f-time" value="${iso}"></div><div class="btn-row"><button class="cancel-btn" onclick="cancelForm()">Cancel</button><button class="save-btn" style="background:var(--nurse-accent)" onclick="saveBreast()">${editLabel}</button></div></div>`;}
+  if(S.form==="bottle"){const ml=S.editMl||24;const isBM=formBottleType==="breastmilk";return `<div class="form-card"><div class="form-header"><button class="back-btn" onclick="cancelForm()">‹ Back</button><div class="form-title" style="color:var(--bottle-fg)">${isEdit?"Edit ":""}Bottle</div></div><div class="form-row"><button class="pill${isBM?" on":""}" onclick="pickBottle('breastmilk')" style="color:${isBM?"var(--bottle-fg)":"var(--muted)"};border-color:${isBM?"var(--bottle-accent)":"transparent"};background:${isBM?"var(--bottle-bg)":"#eee7db"}">Breast Milk</button><button class="pill${!isBM?" on":""}" onclick="pickBottle('formula')" style="color:${!isBM?"var(--bottle-fg)":"var(--muted)"};border-color:${!isBM?"var(--bottle-accent)":"transparent"};background:${!isBM?"var(--bottle-bg)":"#eee7db"}">Formula</button></div><div class="stepper"><button onclick="stepMl(-5)">−5</button><button onclick="stepMl(-1)">−</button><input type="number" class="val" id="f-ml" value="${ml}" onchange="clampMl()" inputmode="numeric"><span class="unit">mL</span><button onclick="stepMl(1)">+</button><button onclick="stepMl(5)">+5</button></div><div class="quick"><button onclick="setMl(20)">20</button><button onclick="setMl(12)">12</button><button onclick="setMl(30)">30</button></div><div class="time-row"><input type="datetime-local" id="f-time" value="${iso}"></div><div class="btn-row"><button class="cancel-btn" onclick="cancelForm()">Cancel</button><button class="save-btn" style="background:var(--bottle-accent)" onclick="saveBottle()">${editLabel}</button></div></div>`;}
+  if(S.form==="pump"){const ml=S.editPump||35;return `<div class="form-card"><div class="form-header"><button class="back-btn" onclick="cancelForm()">‹ Back</button><div class="form-title" style="color:var(--pump-fg)">${isEdit?"Edit ":""}Pump</div></div><div class="stepper"><button onclick="stepPump(-5)">−5</button><button onclick="stepPump(-1)">−</button><input type="number" class="val" id="f-pump" value="${ml}" onchange="clampPump()" inputmode="numeric"><span class="unit">mL</span><button onclick="stepPump(1)">+</button><button onclick="stepPump(5)">+5</button></div><div class="quick"><button onclick="setPump(25)">25</button><button onclick="setPump(45)">45</button><button onclick="setPump(55)">55</button></div><div class="form-row" style="margin-bottom:12px"><span style="font-size:12px;color:var(--muted)">Store milk:</span><button class="pill${S.pumpStorage==="counter"?" on":""}" onclick="S.pumpStorage=S.pumpStorage==='counter'?'':'counter';render()" style="padding:6px 12px;font-size:12px;background:#eee7db;color:var(--muted)">🏠 Counter</button><button class="pill${S.pumpStorage==="fridge"?" on":""}" onclick="S.pumpStorage=S.pumpStorage==='fridge'?'':'fridge';render()" style="padding:6px 12px;font-size:12px;background:#eee7db;color:var(--muted)">❄️ Fridge</button><button class="pill${S.pumpStorage==="freezer"?" on":""}" onclick="S.pumpStorage=S.pumpStorage==='freezer'?'':'freezer';render()" style="padding:6px 12px;font-size:12px;background:#eee7db;color:var(--muted)">🧊 Freezer</button></div><div class="time-row"><input type="datetime-local" id="f-time" value="${iso}"></div><div class="btn-row"><button class="cancel-btn" onclick="cancelForm()">Cancel</button><button class="save-btn" style="background:var(--pump-accent)" onclick="savePump()">${editLabel}</button></div></div>`;}
+  return "";
 }
-
-function renderEntry(e,i){const c=EC[e.displayType]||EC.other;const since=timeSince(e.date,e.time);const isSynced=e.synced||e.fromSheet;const isResyncing=e.resyncing;
-  let statusIcon="";let opacity="1";
-  if(isResyncing){statusIcon='<div class="spinner"></div>';opacity="0.45";}
-  else if(isSynced){statusIcon='<span style="color:var(--accent2);font-size:13px" title="Synced">✓</span>';}
-  else{statusIcon='<span style="color:var(--mutedLight);font-size:10px">⏳</span>';opacity="0.45";}
-  const syncMark=isSynced&&!isResyncing?'<span style="margin-left:6px;color:var(--accent2);font-size:13px">✓</span>':'';
-  const pendMark=!isSynced&&!isResyncing?'<span style="margin-left:6px;color:var(--mutedLight);font-size:10px">⏳</span>':'';
-  return `<div class="entry" style="background:${c.bg};border-color:${c.accent};opacity:${opacity}" ontouchstart="lpStart('${e.id}',event)" ontouchend="lpEnd()" ontouchcancel="lpEnd()" oncontextmenu="lpFire('${e.id}',event);return false"><div class="info"><div class="sum">${sumText(e)}${syncMark}${pendMark}</div><div class="time">${e.date} ${e.time}${since?" · "+since:""}</div></div>${statusIcon}</div>`;}
-
-let lpTimer=null,lpId=null;
-function lpStart(id,ev){lpId=id;lpTimer=setTimeout(()=>{lpFire(id,ev);},500);}
-function lpEnd(){clearTimeout(lpTimer);lpTimer=null;}
-function lpFire(id,ev){clearTimeout(lpTimer);ev.preventDefault();S.ctxMenu=id;
-  const t=ev.touches?ev.touches[0]:ev;S.ctxX=Math.min(t.clientX,window.innerWidth-200);S.ctxY=Math.min(t.clientY,window.innerHeight-180);render();}
-
-function renderCtxMenu(){
-  if(!S.ctxMenu)return "";
-  return `<div class="ctx-overlay" onclick="closeCtx()"></div><div class="ctx-menu" style="left:${S.ctxX}px;top:${S.ctxY}px">
-    <button class="ctx-item" onclick="editEntry('${S.ctxMenu}')"><div class="ctx-icon" style="background:#f0fae1;color:var(--accent2)">✏️</div>Edit</button>
-    <div class="ctx-sep"></div>
-    <button class="ctx-item" onclick="resyncEntry('${S.ctxMenu}')"><div class="ctx-icon" style="background:#e8f0fe;color:#4a7cc9">🔄</div>Re-sync</button>
-    <div class="ctx-sep"></div>
-    <button class="ctx-item" onclick="confirmDelete('${S.ctxMenu}')" style="color:#c0392b"><div class="ctx-icon" style="background:#fde8e8;color:#c0392b">🗑️</div>Delete</button>
-  </div>`;
-}
+function cancelForm(){S.form=null;S.editId=null;S.editTime=null;S.editMins=null;S.editMl=null;S.editPump=null;S.pumpStorage="";formPee=false;formPoop=false;formSide="Left";formBottleType="breastmilk";formStoolColor="";render();}
+// Entry render
+function renderEntry(e,i){const c=EC[e.displayType]||EC.other;const since=timeSince(e.date,e.time);const isSynced=e.synced||e.fromSheet;const isResyncing=e.resyncing;let statusIcon="";let opacity="1";if(isResyncing){statusIcon='<div class="spinner"></div>';opacity="0.45";}else if(isSynced){statusIcon='<span style="color:var(--accent2);font-size:13px">✓</span>';}else{statusIcon='<span style="color:var(--mutedLight);font-size:10px">⏳</span>';opacity="0.45";}const syncMark=isSynced&&!isResyncing?'<span style="margin-left:6px;color:var(--accent2);font-size:13px">✓</span>':"";const pendMark=!isSynced&&!isResyncing?'<span style="margin-left:6px;color:var(--mutedLight);font-size:10px">⏳</span>':"";return `<div class="entry" style="background:${c.bg};border-color:${c.accent};opacity:${opacity}" ontouchstart="lpStart('${e.id}',event)" ontouchend="lpEnd()" ontouchcancel="lpEnd()" oncontextmenu="lpFire('${e.id}',event);return false"><div class="info"><div class="sum">${sumText(e)}${syncMark}${pendMark}</div><div class="time">${e.date} ${e.time}${since?" · "+since:""}</div></div>${statusIcon}</div>`;}
+// Context menu + modals
+let lpTimer=null;function lpStart(id,ev){lpTimer=setTimeout(()=>{lpFire(id,ev);},500);}function lpEnd(){clearTimeout(lpTimer);}function lpFire(id,ev){clearTimeout(lpTimer);ev.preventDefault();S.ctxMenu=id;const t=ev.touches?ev.touches[0]:ev;S.ctxX=Math.min(t.clientX,window.innerWidth-200);S.ctxY=Math.min(t.clientY,window.innerHeight-180);render();}
+function renderCtxMenu(){if(!S.ctxMenu)return "";return `<div class="ctx-overlay" onclick="closeCtx()"></div><div class="ctx-menu" style="left:${S.ctxX}px;top:${S.ctxY}px"><button class="ctx-item" onclick="editEntry('${S.ctxMenu}')"><div class="ctx-icon" style="background:#f0fae1;color:var(--accent2)">✏️</div>Edit</button><div class="ctx-sep"></div><button class="ctx-item" onclick="resyncEntry('${S.ctxMenu}')"><div class="ctx-icon" style="background:#e8f0fe;color:#4a7cc9">🔄</div>Re-sync</button><div class="ctx-sep"></div><button class="ctx-item" onclick="confirmDelete('${S.ctxMenu}')" style="color:#c0392b"><div class="ctx-icon" style="background:#fde8e8;color:#c0392b">🗑️</div>Delete</button></div>`;}
 function closeCtx(){S.ctxMenu=null;render();}
-
-function renderConfirmModal(){
-  if(!S.confirmDel)return "";
-  const e=S.logs.find(l=>l.id===S.confirmDel);if(!e)return "";
-  return `<div class="confirm-modal" onclick="cancelDelete()"><div class="confirm-box" onclick="event.stopPropagation()"><h3>Delete Entry?</h3><p>${sumText(e)}<br>${e.date} ${e.time}</p><div class="confirm-btns"><button onclick="cancelDelete()" style="background:#eee7db;color:var(--muted)">Cancel</button><button onclick="doDelete('${S.confirmDel}')" style="background:#c0392b;color:#fff">Delete</button></div></div></div>`;
-}
+function renderConfirmModal(){if(!S.confirmDel)return "";const e=S.logs.find(l=>l.id===S.confirmDel);if(!e)return "";return `<div class="confirm-modal" onclick="cancelDelete()"><div class="confirm-box" onclick="event.stopPropagation()"><h3>Delete Entry?</h3><p>${sumText(e)}<br>${e.date} ${e.time}</p><div class="confirm-btns"><button onclick="cancelDelete()" style="background:#eee7db;color:var(--muted)">Cancel</button><button onclick="doDelete('${S.confirmDel}')" style="background:#c0392b;color:#fff">Delete</button></div></div></div>`;}
 function confirmDelete(id){S.ctxMenu=null;S.confirmDel=id;render();}
 function cancelDelete(){S.confirmDel=null;render();}
 function doDelete(id){S.confirmDel=null;deleteEntry(id);}
-
-function editEntry(id){S.ctxMenu=null;const e=S.logs.find(l=>l.id===id);if(!e)return;
-  S.editId=id;
-  if(e.displayType==="diaper"){S.form="diaper";formPee=!!e.pee;formPoop=!!e.poop;S.editTime=parseEditTime(e);}
-  else if(e.displayType==="breast"){S.form="breast";formSide=e.side||"Left";S.editMins=parseInt(e.breastLength)||15;S.editTime=parseEditTime(e);}
-  else if(e.displayType==="formula"||e.displayType==="breastmilk"){S.form="bottle";formBottleType=e.displayType==="formula"?"formula":"breastmilk";S.editMl=parseInt(e.formulaAmount||e.breastMilkAmount)||4;S.editTime=parseEditTime(e);}
-  else if(e.displayType==="pump"){S.form="pump";S.editPump=parseInt(e.pumpAmount)||12;S.editTime=parseEditTime(e);}
-  render();
-}
-function parseEditTime(e){try{const tp=e.time.match(/(\d+):(\d+)\s*(AM|PM)?/i);if(!tp)return toISO(new Date());let h=+tp[1];const m=+tp[2],ap=(tp[3]||"").toUpperCase();if(ap==="PM"&&h!==12)h+=12;if(ap==="AM"&&h===12)h=0;const dp=e.date.split("/");const d=new Date(+dp[2],+dp[0]-1,+dp[1],h,m);return toISO(d);}catch{return toISO(new Date());}}
-
-async function resyncEntry(id){S.ctxMenu=null;const e=S.logs.find(l=>l.id===id);if(!e)return;
-  e.resyncing=true;render();
-  try{
-    const r=await fetch(SCRIPT_URL);
-    if(!r.ok)throw new Error("fetch failed");
-    const data=await r.json();
-    const sheetEntries=data.map(row=>{
-      const s={date:row["Today's Date"]||"",time:row["Time of Day"]||"",breastLength:row["Length of Breast Feeding"]||"",formulaAmount:row["Formula Amount"]||"",breastMilkAmount:row["Breast Milk Amount"]||"",side:row["Right Side/Left Side"]||"",pee:row["Pee"]||"",poop:row["Poop"]||"",pumpAmount:row["Pump Amount"]||""};
-      if(s.date.includes("1899"))s.date="";if(s.time.includes("1899"))s.time="";s.displayType=classify(s);return s;
-    });
-    const myKey=dedupKey(e);
-    const found=sheetEntries.some(s=>dedupKey(s)===myKey);
-    if(found){e.synced=true;}
-    else{
-      const p=new URLSearchParams({action:"add",date:e.date||"",timeOfDay:e.time||"",breastLength:e.breastLength||"",formulaAmount:e.formulaAmount||"",breastMilkAmount:e.breastMilkAmount||"",side:e.side||"",pee:e.pee||"",poop:e.poop||"",pumpAmount:e.pumpAmount||""});
-      const wr=await fetch(SCRIPT_URL+"?"+p.toString());
-      if(wr.ok){e.synced=true;}
-    }
-  }catch(err){console.error("Resync:",err);}
-  e.resyncing=false;dedup();save();render();}
-
-function renderForm(){const iso=S.editTime||toISO(new Date());const isEdit=!!S.editId;const editLabel=isEdit?"Update":"Save";
-  if(S.form==="diaper")return `<div class="form-card"><div class="form-header"><button class="back-btn" onclick="cancelForm()">‹ Back</button><div class="form-title" style="color:var(--diaper-fg)">${isEdit?"Edit ":""}Diaper</div></div><div class="form-row"><button class="pill${formPee?" on":""}" id="pee-btn" onclick="togglePill('pee')" style="background:${formPee?"#f0fae1":"#eee7db"};color:${formPee?"var(--accent2)":"var(--muted)"};border-color:${formPee?"var(--accent2)":"transparent"}">💧 Pee</button><button class="pill${formPoop?" on":""}" id="poop-btn" onclick="togglePill('poop')" style="background:${formPoop?"var(--diaper-bg)":"#eee7db"};color:${formPoop?"var(--diaper-fg)":"var(--muted)"};border-color:${formPoop?"var(--diaper-accent)":"transparent"}">💩 Poop</button></div><div class="time-row"><input type="datetime-local" id="f-time" value="${iso}"></div><div class="btn-row"><button class="cancel-btn" onclick="cancelForm()">Cancel</button><button class="save-btn" style="background:var(--diaper-accent)" onclick="saveDiaper()">${editLabel}</button></div></div>`;
-  if(S.form==="breast"){const mins=S.editMins||15;return `<div class="form-card"><div class="form-header"><button class="back-btn" onclick="cancelForm()">‹ Back</button><div class="form-title" style="color:var(--nurse-fg)">${isEdit?"Edit ":""}Nurse</div></div><div class="form-row"><button class="pill${formSide==="Left"?" on":""}" id="left-btn" onclick="pickSide('Left')" style="color:${formSide==="Left"?"var(--accent2)":"var(--muted)"};border-color:${formSide==="Left"?"var(--accent2)":"transparent"};background:${formSide==="Left"?"#f0fae1":"#eee7db"}">◂ Left</button><button class="pill${formSide==="Both"?" on":""}" id="both-btn" onclick="pickSide('Both')" style="color:${formSide==="Both"?"var(--accent2)":"var(--muted)"};border-color:${formSide==="Both"?"var(--accent2)":"transparent"};background:${formSide==="Both"?"#f0fae1":"#eee7db"}">Both</button><button class="pill${formSide==="Right"?" on":""}" id="right-btn" onclick="pickSide('Right')" style="color:${formSide==="Right"?"var(--accent2)":"var(--muted)"};border-color:${formSide==="Right"?"var(--accent2)":"transparent"};background:${formSide==="Right"?"#f0fae1":"#eee7db"}">Right ▸</button></div><div class="stepper"><button onclick="stepMin(-5)">−5</button><button onclick="stepMin(-1)">−</button><input type="number" class="val" id="f-mins" value="${mins}" onchange="clampMin()" inputmode="numeric"><span class="unit">min</span><button onclick="stepMin(1)">+</button><button onclick="stepMin(5)">+5</button></div><div class="quick"><button onclick="setMin(5)">5 min</button><button onclick="setMin(15)">15 min</button><button onclick="setMin(20)">20 min</button></div><div class="time-row"><input type="datetime-local" id="f-time" value="${iso}"></div><div class="btn-row"><button class="cancel-btn" onclick="cancelForm()">Cancel</button><button class="save-btn" style="background:var(--nurse-accent)" onclick="saveBreast()">${editLabel}</button></div></div>`;}
-  if(S.form==="bottle"){const ml=S.editMl||24;const isBM=formBottleType==="breastmilk";return `<div class="form-card"><div class="form-header"><button class="back-btn" onclick="cancelForm()">‹ Back</button><div class="form-title" style="color:var(--bottle-fg)">${isEdit?"Edit ":""}Bottle</div></div><div class="form-row"><button class="pill${isBM?" on":""}" id="bm-btn" onclick="pickBottle('breastmilk')" style="color:${isBM?"var(--bottle-fg)":"var(--muted)"};border-color:${isBM?"var(--bottle-accent)":"transparent"};background:${isBM?"var(--bottle-bg)":"#eee7db"}">Breast Milk</button><button class="pill${!isBM?" on":""}" id="formula-btn" onclick="pickBottle('formula')" style="color:${!isBM?"var(--bottle-fg)":"var(--muted)"};border-color:${!isBM?"var(--bottle-accent)":"transparent"};background:${!isBM?"var(--bottle-bg)":"#eee7db"}">Formula</button></div><div class="stepper"><button onclick="stepMl(-5)">−5</button><button onclick="stepMl(-1)">−</button><input type="number" class="val" id="f-ml" value="${ml}" onchange="clampMl()" inputmode="numeric"><span class="unit">mL</span><button onclick="stepMl(1)">+</button><button onclick="stepMl(5)">+5</button></div><div class="quick"><button onclick="setMl(20)">20mL</button><button onclick="setMl(12)">12mL</button><button onclick="setMl(30)">30mL</button></div><div class="time-row"><input type="datetime-local" id="f-time" value="${iso}"></div><div class="btn-row"><button class="cancel-btn" onclick="cancelForm()">Cancel</button><button class="save-btn" id="bottle-save" style="background:var(--bottle-accent)" onclick="saveBottle()">${editLabel}</button></div></div>`;}
-  if(S.form==="pump"){const ml=S.editPump||35;return `<div class="form-card"><div class="form-header"><button class="back-btn" onclick="cancelForm()">‹ Back</button><div class="form-title" style="color:var(--pump-fg)">${isEdit?"Edit ":""}Pump</div></div><div class="stepper"><button onclick="stepPump(-5)">−5</button><button onclick="stepPump(-1)">−</button><input type="number" class="val" id="f-pump" value="${ml}" onchange="clampPump()" inputmode="numeric"><span class="unit">mL</span><button onclick="stepPump(1)">+</button><button onclick="stepPump(5)">+5</button></div><div class="quick"><button onclick="setPump(25)">25mL</button><button onclick="setPump(45)">45mL</button><button onclick="setPump(55)">55mL</button></div><div class="time-row"><input type="datetime-local" id="f-time" value="${iso}"></div><div class="btn-row"><button class="cancel-btn" onclick="cancelForm()">Cancel</button><button class="save-btn" style="background:var(--pump-accent)" onclick="savePump()">${editLabel}</button></div></div>`;}
-  return "";
-}
-function cancelForm(){S.form=null;S.editId=null;S.editTime=null;S.editMins=null;S.editMl=null;S.editPump=null;formPee=false;formPoop=false;formSide="Left";formBottleType="breastmilk";render();}
-
-function renderDayModal(){
-  if(!S.selectedDay&&!S.selectedRange)return "";
-  let dayLogs,title;
-  if(S.selectedRange==="12h"){
-    const cutoff=Date.now()-12*3600000;
-    dayLogs=S.logs.filter(l=>{const t=parseEntryDate(l);return t>=cutoff&&t<=Date.now();}).sort((a,b)=>parseEntryDate(a)-parseEntryDate(b));
-    title="Last 12 Hours";
-  }else{
-    const ds=S.selectedDay;
-    dayLogs=S.logs.filter(l=>l.date===ds).sort((a,b)=>parseEntryDate(a)-parseEntryDate(b));
-    const [mm,dd,yy]=ds.split("/");title=new Date(+yy,+mm-1,+dd).toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
-  }
-  const diapers=dayLogs.filter(l=>l.displayType==="diaper").length;
-  const wet=dayLogs.filter(l=>l.pee).length;const dirty=dayLogs.filter(l=>l.poop).length;
-  const nurseEntries=dayLogs.filter(l=>l.displayType==="breast");
-  const nurseMin=nurseEntries.reduce((s,l)=>s+(parseInt(l.breastLength)||0),0);
-  const bottleEntries=dayLogs.filter(l=>l.displayType==="formula"||l.displayType==="breastmilk");
-  const bottleMl=bottleEntries.reduce((s,l)=>{const m=(l.formulaAmount||l.breastMilkAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);
-  const pumpEntries=dayLogs.filter(l=>l.displayType==="pump");
-  const pumpMl=pumpEntries.reduce((s,l)=>{const m=(l.pumpAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);
-  let stats=`<div class="summary">
-    <div class="s-card" style="background:var(--diaper-bg)"><div class="num" style="color:var(--diaper-fg)">${diapers}</div><div class="label">diapers (${wet}💧 ${dirty}💩)</div></div>
-    <div class="s-card" style="background:var(--nurse-bg)"><div class="num" style="color:var(--nurse-fg)">${nurseMin}<span style="font-size:11px">min</span></div><div class="label">${nurseEntries.length} sessions</div></div>
-    <div class="s-card" style="background:var(--bottle-bg)"><div class="num" style="color:var(--bottle-fg)">${(bottleMl/29.5735).toFixed(1)}<span style="font-size:11px"> oz</span></div><div class="label">${bottleEntries.length} feeds · ${bottleMl} mL</div></div>
-    <div class="s-card" style="background:var(--pump-bg)"><div class="num" style="color:var(--pump-fg)">${(pumpMl/29.5735).toFixed(1)}<span style="font-size:11px"> oz</span></div><div class="label">${pumpEntries.length} sessions · ${pumpMl} mL</div></div>
-  </div>`;
-  let entries="";
-  const reversed=dayLogs.slice().reverse();
-  if(S.dayExpanded){
-    reversed.forEach(e=>{const c=EC[e.displayType]||EC.other;entries+=`<div class="entry" style="background:${c.bg};border-color:${c.accent}"><div class="info"><div class="sum" style="font-size:13px">${sumText(e)}</div></div><div style="font-size:11px;color:var(--muted)">${e.time}</div></div>`;});
-  }
-  const chevron=S.dayExpanded?"▴":"▾";
-  const historyBtn=dayLogs.length>0?`<button onclick="toggleDayExpand()" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 4px;border-top:1px solid var(--divider);font-size:14px;font-weight:600;color:var(--text);background:none;border-bottom:none;border-left:none;border-right:none;cursor:pointer">Full history (${dayLogs.length})<span>${chevron}</span></button>`:"<div style='text-align:center;padding:20px;color:var(--muted);font-size:13px'>No activity logged</div>";
-  return `<div class="modal-bg" onclick="closeDay()"><div class="modal" onclick="event.stopPropagation()"><div style="display:flex;align-items:center;margin-bottom:16px"><div class="modal-title" style="flex:1">${title}</div><button class="modal-close" onclick="closeDay()">✕</button></div>${stats}${historyBtn}${entries}</div></div>`;
-}
-
-function renderDeletedSection(){
-  const chevron=S.showDeleted?"▴":"▾";
-  let h=`<div class="deleted-section"><button class="deleted-toggle" onclick="S.showDeleted=!S.showDeleted;render()">🗑️ Recently Deleted (${S.recentlyDeleted.length})<span>${chevron}</span></button>`;
-  if(S.showDeleted){
-    S.recentlyDeleted.forEach((e,i)=>{
-      e.displayType=e.displayType||classify(e);
-      const ago=timeSince(e.date,e.time);
-      h+=`<div class="deleted-entry"><div class="info"><div class="sum">${sumText(e)}</div><div class="time">${e.date} ${e.time}${ago?" · "+ago:""}</div></div><button class="restore-btn" onclick="restoreEntry(${i})">Restore</button></div>`;
-    });
-    h+=`<button onclick="clearAllDeleted()" style="display:block;margin:8px auto;padding:6px 16px;border-radius:999px;font-size:12px;color:#c0392b;background:none;border:1px solid #c0392b">Clear all</button>`;
-  }
-  h+=`</div>`;return h;
-}
-
+function editEntry(id){S.ctxMenu=null;const e=S.logs.find(l=>l.id===id);if(!e)return;S.editId=id;if(e.displayType==="diaper"){S.form="diaper";formPee=!!e.pee;formPoop=!!e.poop;formStoolColor=e.stoolColor||"";S.editTime=parseEditTime(e);}else if(e.displayType==="breast"){S.form="breast";formSide=e.side||"Left";S.editMins=parseInt(e.breastLength)||15;S.editTime=parseEditTime(e);}else if(e.displayType==="formula"||e.displayType==="breastmilk"){S.form="bottle";formBottleType=e.displayType==="formula"?"formula":"breastmilk";S.editMl=parseInt(e.formulaAmount||e.breastMilkAmount)||24;S.editTime=parseEditTime(e);}else if(e.displayType==="pump"){S.form="pump";S.editPump=parseInt(e.pumpAmount)||35;S.editTime=parseEditTime(e);}render();}
+function parseEditTime(e){try{const tp=e.time.match(/(\d+):(\d+)\s*(AM|PM)?/i);if(!tp)return toISO(new Date());let h=+tp[1];const m=+tp[2],ap=(tp[3]||"").toUpperCase();if(ap==="PM"&&h!==12)h+=12;if(ap==="AM"&&h===12)h=0;const dp=e.date.split("/");return toISO(new Date(+dp[2],+dp[0]-1,+dp[1],h,m));}catch{return toISO(new Date());}}
+// Status modal
+function renderStatusModal(){if(!S.statusModal)return "";const typeMap={diaper:"Diaper",nurse:"Nurse",bottle:"Bottle",pump:"Pump",feeding:"Feeding Score"};const bgMap={diaper:"var(--diaper-bg)",nurse:"var(--nurse-bg)",bottle:"var(--bottle-bg)",pump:"var(--pump-bg)",feeding:"#fff8ee"};let st;if(S.statusModal==="feeding"){const fs=getFeedingScore();st={color:fs.color,label:fs.color==="green"?"On Track":fs.color==="yellow"?"Monitor":"Needs Attention",reason:`${fs.count} total feeds in 24 hours${fs.ml>0?" ("+fs.ml+" mL bottle)":""}`,guideline:"Kaiser: baby should eat 8-12 times in 24 hours",action:fs.color==="red"?"Increase feeding frequency — talk to your doctor if concerned":""};}else{st=getStatus(S.statusModal);}const dotStyle=st.color==="green"?"background:var(--green)":st.color==="yellow"?"background:var(--yellow)":"background:var(--red)";
+  return `<div class="modal-bg" onclick="S.statusModal=null;render()"><div class="modal" onclick="event.stopPropagation()"><div style="display:flex;align-items:center;margin-bottom:16px"><div class="modal-title" style="flex:1">${typeMap[S.statusModal]||""} Status</div><button class="modal-close" onclick="S.statusModal=null;render()">✕</button></div><div class="status-panel" style="background:${bgMap[S.statusModal]}"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><div style="width:14px;height:14px;border-radius:50%;${dotStyle}"></div><h4>${st.label}</h4></div><p>${st.reason}</p><div class="guideline" style="border-color:${st.color==="green"?"var(--green)":st.color==="yellow"?"var(--yellow)":"var(--red)"}">${st.guideline}</div>${st.action?`<p class="action">${st.action}</p>`:""}</div>${st.color==="red"?`<p style="font-size:12px;color:var(--red);text-align:center;margin-top:8px">If you're concerned, call your baby's doctor</p>`:""}</div></div>`;}
+// Call reference modal
+function renderCallRef(){if(!S.callRef)return "";return `<div class="modal-bg" onclick="S.callRef=false;render()"><div class="modal call-ref" onclick="event.stopPropagation()"><div style="display:flex;align-items:center;margin-bottom:12px"><div class="modal-title" style="flex:1">When to Call</div><button class="modal-close" onclick="S.callRef=false;render()">✕</button></div><h4 style="color:var(--red)">🚨 Call 911 if baby has:</h4><ul><li class="emergency">Breathing fast, hard to breathe, or turned blue</li><li class="emergency">Limp, floppy, or can't be woken up</li></ul><h4>👶 Call baby's doctor if:</h4><ul><li>Fever: rectal temp 100.4°F (38°C)+</li><li>Low temp: rectal 97.5°F (36.4°C) or lower</li><li>Forceful/projectile vomiting every feed, or green vomit</li><li>Blue lips, pale skin, sweating when feeding</li><li>Umbilical cord: swelling, foul smell, pus, redness</li><li>Not feeding or latching well</li><li>Fewer wet diapers than expected</li><li>Stool not yellow/green by end of week 1</li><li>Blood in stool, or pale/clay-colored stool</li><li>Extremely fussy, can't be comforted</li><li>Yellow skin or eyes (jaundice)</li></ul><h4>🤰 Call YOUR doctor if:</h4><ul><li>Heavy bright red bleeding (1+ pad/hour) or golf-ball clots</li><li>Fever 100.4°F+, chills</li><li>Blood pressure 140/90+</li><li>Worsening vaginal/perineal pain or swelling</li><li>Severe belly pain unrelieved by medication</li><li>Bad headaches, vision spots, dizziness, fainting</li><li>Blurry or double vision</li><li>Hard, red, tender breast areas</li><li>3+ pound weight gain in 3 days</li><li>Trouble breathing, chest pain, persistent cough</li><li>Feelings of despair, great anxiety, unable to cope</li><li>One leg more swollen, painful, or red than the other</li></ul><p style="font-size:11px;color:var(--muted);margin-top:12px;text-align:center">Source: Kaiser Permanente Newborn Care Guide</p></div></div>`;}
+// Day modal
+function renderDayModal(){if(!S.selectedDay&&!S.selectedRange)return "";let dayLogs,title;if(S.selectedRange==="12h"){const cutoff=Date.now()-12*3600000;dayLogs=S.logs.filter(l=>{const t=parseEntryDate(l);return t>=cutoff&&t<=Date.now();}).sort((a,b)=>parseEntryDate(a)-parseEntryDate(b));title="Last 12 Hours";}else{const ds=S.selectedDay;dayLogs=S.logs.filter(l=>l.date===ds).sort((a,b)=>parseEntryDate(a)-parseEntryDate(b));const[mm,dd,yy]=ds.split("/");title=new Date(+yy,+mm-1,+dd).toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});}const diapers=dayLogs.filter(l=>l.displayType==="diaper").length;const wet=dayLogs.filter(l=>l.pee).length;const dirty=dayLogs.filter(l=>l.poop).length;const ne=dayLogs.filter(l=>l.displayType==="breast");const nm=ne.reduce((s,l)=>s+(parseInt(l.breastLength)||0),0);const be=dayLogs.filter(l=>l.displayType==="formula"||l.displayType==="breastmilk");const bm=be.reduce((s,l)=>{const m=(l.formulaAmount||l.breastMilkAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);const pe=dayLogs.filter(l=>l.displayType==="pump");const pm=pe.reduce((s,l)=>{const m=(l.pumpAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);let stats=`<div class="summary"><div class="s-card" style="background:var(--diaper-bg)"><div class="num" style="color:var(--diaper-fg)">${diapers}</div><div class="label">diapers (${wet}💧 ${dirty}💩)</div></div><div class="s-card" style="background:var(--nurse-bg)"><div class="num" style="color:var(--nurse-fg)">${nm}<span style="font-size:11px">min</span></div><div class="label">${ne.length} sessions</div></div><div class="s-card" style="background:var(--bottle-bg)"><div class="num" style="color:var(--bottle-fg)">${(bm/29.5735).toFixed(1)}<span style="font-size:11px"> oz</span></div><div class="label">${be.length} feeds · ${bm} mL</div></div><div class="s-card" style="background:var(--pump-bg)"><div class="num" style="color:var(--pump-fg)">${(pm/29.5735).toFixed(1)}<span style="font-size:11px"> oz</span></div><div class="label">${pe.length} sessions · ${pm} mL</div></div></div>`;let entries="";if(S.dayExpanded){dayLogs.slice().reverse().forEach(e=>{const c=EC[e.displayType]||EC.other;entries+=`<div class="entry" style="background:${c.bg};border-color:${c.accent}"><div class="info"><div class="sum" style="font-size:13px">${sumText(e)}</div></div><div style="font-size:11px;color:var(--muted)">${e.time}</div></div>`;});}const hb=dayLogs.length>0?`<button onclick="toggleDayExpand()" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 4px;border-top:1px solid var(--divider);font-size:14px;font-weight:600;color:var(--text);background:none;border-bottom:none;border-left:none;border-right:none;cursor:pointer">Full history (${dayLogs.length})<span>${S.dayExpanded?"▴":"▾"}</span></button>`:"<div style='text-align:center;padding:20px;color:var(--muted);font-size:13px'>No activity</div>";return `<div class="modal-bg" onclick="closeDay()"><div class="modal" onclick="event.stopPropagation()"><div style="display:flex;align-items:center;margin-bottom:16px"><div class="modal-title" style="flex:1">${title}</div><button class="modal-close" onclick="closeDay()">✕</button></div>${stats}${hb}${entries}</div></div>`;}
+// Storage timers
+function renderStorageTimers(){if(S.storageTimers.length===0)return "";const now=Date.now();const limits={counter:4*3600000,fridge:4*24*3600000,freezer:6*30*24*3600000};const warns={counter:3*3600000,fridge:3*24*3600000,freezer:5*30*24*3600000};const labels={counter:"🏠 Counter",fridge:"❄️ Fridge",freezer:"🧊 Freezer"};let h=`<div class="history-title">🍼 Milk Storage</div>`;S.storageTimers.forEach((t,i)=>{const elapsed=now-t.started;const limit=limits[t.type];const warn=warns[t.type];let timeStr="";const hrs=Math.floor(elapsed/3600000);if(t.type==="counter"){timeStr=`${hrs}h ${Math.floor((elapsed%3600000)/60000)}m / 4h`;}else if(t.type==="fridge"){const days=Math.floor(hrs/24);timeStr=`${days}d ${hrs%24}h / 4 days`;}else{const months=Math.floor(elapsed/(30*24*3600000));timeStr=`${months}mo / 6 months`;}let color="var(--green)";if(elapsed>=limit)color="var(--red)";else if(elapsed>=warn)color="var(--yellow)";h+=`<div class="storage-card"><div class="s-info"><div style="font-weight:600">${labels[t.type]} · ${t.ml} mL</div><div style="font-size:11px;color:var(--muted)">${new Date(t.started).toLocaleString()}</div></div><div class="s-time" style="color:${color}">${timeStr}</div><button onclick="removeStorage(${i})" style="color:var(--mutedLight);font-size:16px;padding:4px">✕</button></div>`;});return h;}
+function removeStorage(i){S.storageTimers.splice(i,1);saveStorage();render();}
+// Deleted section
+function renderDeletedSection(){if(S.recentlyDeleted.length===0)return "";let h=`<div class="deleted-section"><button class="deleted-toggle" onclick="S.showDeleted=!S.showDeleted;render()">🗑️ Recently Deleted (${S.recentlyDeleted.length})<span>${S.showDeleted?"▴":"▾"}</span></button>`;if(S.showDeleted){S.recentlyDeleted.forEach((e,i)=>{e.displayType=e.displayType||classify(e);h+=`<div class="deleted-entry"><div class="info"><div class="sum">${sumText(e)}</div><div class="time">${e.date} ${e.time}</div></div><button class="restore-btn" onclick="restoreEntry(${i})">Restore</button></div>`;});h+=`<button onclick="S.recentlyDeleted=[];localStorage.setItem('bl-deleted','[]');render()" style="display:block;margin:8px auto;padding:6px 16px;border-radius:999px;font-size:12px;color:#c0392b;border:1px solid #c0392b">Clear all</button>`;}h+="</div>";return h;}
+// Main render
 function render(){
+  if(!getBirthDate()){document.getElementById("app").innerHTML=renderSetup();return;}
+  const age=babyAgeDays();
   const syncLabel=S.syncing?"Syncing...":S.pendingWrites.length>0?`${S.pendingWrites.length} pending`:"Synced";
   const syncBg=S.syncing?"#ffe1d0":"#eee7db";const syncColor=S.syncing?"#8c491a":"var(--muted)";
-  let h=`<div class="header"><h1>Activity Log</h1><div class="name">Alaiya Maeve Querubin</div><div class="date">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}</div><span class="badge" style="background:${syncBg};color:${syncColor}">${syncLabel}</span></div>`;
+  let h=`<div class="header"><button class="call-btn" onclick="S.callRef=true;render()">☎️</button><h1>Activity Log</h1><div class="name">Alaiya Maeve Querubin</div><div class="date">${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}</div><div class="age">Day ${age}</div><span class="badge" style="background:${syncBg};color:${syncColor}">${syncLabel}</span></div>`;
+  h+=renderFeedTimer();
   if(S.logs.length>0){h+=renderSummary();h+=renderChart();}
-  if(!S.form){h+=`<div class="actions">
-    <button class="act-btn" style="background:var(--diaper-bg);color:var(--diaper-fg)" onclick="S.form='diaper';render()"><span style="font-size:26px">🧷</span>Diaper</button>
-    <button class="act-btn" style="background:var(--nurse-bg);color:var(--nurse-fg)" onclick="S.form='breast';render()"><span style="font-size:26px">🤱</span>Nurse</button>
-    <button class="act-btn" style="background:var(--bottle-bg);color:var(--bottle-fg)" onclick="S.form='bottle';render()"><span style="font-size:26px">🍼</span>Bottle</button>
-    <button class="act-btn" style="background:var(--pump-bg);color:var(--pump-fg)" onclick="S.form='pump';render()"><span style="font-size:26px">🥛</span>Pump</button>
-  </div>`;}else{h+=renderForm();}
+  h+=renderMilestones();
+  if(!S.form){h+=`<div class="actions"><button class="act-btn" style="background:var(--diaper-bg);color:var(--diaper-fg)" onclick="S.form='diaper';render()"><span style="font-size:26px">🧷</span>Diaper</button><button class="act-btn" style="background:var(--nurse-bg);color:var(--nurse-fg)" onclick="S.form='breast';render()"><span style="font-size:26px">🤱</span>Nurse</button><button class="act-btn" style="background:var(--bottle-bg);color:var(--bottle-fg)" onclick="S.form='bottle';render()"><span style="font-size:26px">🍼</span>Bottle</button><button class="act-btn" style="background:var(--pump-bg);color:var(--pump-fg)" onclick="S.form='pump';render()"><span style="font-size:26px">🥛</span>Pump</button></div>`;}else{h+=renderForm();}
+  h+=renderStorageTimers();
   h+=`<div class="history-title">History (${S.logs.length})</div>`;
   if(S.logs.length===0&&!S.syncing)h+=`<div class="empty">No logs yet — tap a button above to start</div>`;
   else{S.logs.slice(0,S.showCount).forEach((e,i)=>{h+=renderEntry(e,i);});if(S.logs.length>S.showCount)h+=`<button class="show-more" onclick="showMore()">Show more (${S.logs.length-S.showCount} older)</button>`;}
-  if(S.recentlyDeleted.length>0){h+=renderDeletedSection();}
-  h+=renderDayModal();
-  h+=renderCtxMenu();
-  h+=renderConfirmModal();
+  if(S.recentlyDeleted.length>0)h+=renderDeletedSection();
+  h+=renderDayModal();h+=renderCtxMenu();h+=renderConfirmModal();h+=renderStatusModal();h+=renderCallRef();
   document.getElementById("app").innerHTML=h;
 }
-
-let formPee=false,formPoop=false,formSide="Left",formBottleType="breastmilk";
-function togglePill(t){if(t==="pee"){formPee=!formPee;const b=document.getElementById("pee-btn");b.style.background=formPee?"#f0fae1":"#eee7db";b.style.color=formPee?"var(--accent2)":"var(--muted)";b.style.borderColor=formPee?"var(--accent2)":"transparent";b.className=formPee?"pill on":"pill";}if(t==="poop"){formPoop=!formPoop;const b=document.getElementById("poop-btn");b.style.background=formPoop?"var(--diaper-bg)":"#eee7db";b.style.color=formPoop?"var(--diaper-fg)":"var(--muted)";b.style.borderColor=formPoop?"var(--diaper-accent)":"transparent";b.className=formPoop?"pill on":"pill";}}
-function pickSide(s){formSide=s;["left","both","right"].forEach(id=>{const b=document.getElementById(id+"-btn");if(!b)return;const on=s.toLowerCase()===id;b.className=on?"pill on":"pill";b.style.color=on?"var(--accent2)":"var(--muted)";b.style.borderColor=on?"var(--accent2)":"transparent";b.style.background=on?"#f0fae1":"#eee7db";});}
-function pickBottle(t){formBottleType=t;const fb=document.getElementById("formula-btn"),bb=document.getElementById("bm-btn");[fb,bb].forEach(b=>{if(!b)return;b.className="pill";b.style.background="#eee7db";b.style.color="var(--muted)";b.style.borderColor="transparent";});const active=t==="formula"?fb:bb;if(active){active.className="pill on";active.style.background="var(--bottle-bg)";active.style.color="var(--bottle-fg)";active.style.borderColor="var(--bottle-accent)";}}
+// Helpers
+function togglePill(t){if(t==="pee")formPee=!formPee;if(t==="poop"){formPoop=!formPoop;if(!formPoop)formStoolColor="";}render();}
+function pickSide(s){formSide=s;render();}
+function pickBottle(t){formBottleType=t;render();}
 function stepMin(d){const el=document.getElementById("f-mins");el.value=Math.max(1,Math.min(120,(+el.value||0)+d));}
 function stepMl(d){const el=document.getElementById("f-ml");el.value=Math.max(1,Math.min(500,(+el.value||0)+d));}
 function stepPump(d){const el=document.getElementById("f-pump");el.value=Math.max(1,Math.min(500,(+el.value||0)+d));}
@@ -394,11 +367,16 @@ function openYesterday(){const d=new Date();d.setDate(d.getDate()-1);S.selectedD
 function openLast12h(){S.selectedDay=null;S.selectedRange="12h";S.dayExpanded=false;render();}
 function closeDay(){S.selectedDay=null;S.selectedRange=null;render();}
 function toggleDayExpand(){S.dayExpanded=!S.dayExpanded;render();}
-function saveDiaper(){if(!formPee&&!formPoop)return;const d=new Date(document.getElementById("f-time").value);if(S.editId){S.logs=S.logs.filter(l=>l.id!==S.editId);}addEntry({date:toDate(d),time:toTime(d),pee:formPee?"X":"",poop:formPoop?"X":""});formPee=false;formPoop=false;S.editId=null;S.editTime=null;}
-function saveBreast(){const mins=document.getElementById("f-mins").value;const d=new Date(document.getElementById("f-time").value);if(S.editId){S.logs=S.logs.filter(l=>l.id!==S.editId);}addEntry({date:toDate(d),time:toTime(d),breastLength:mins+" min",side:formSide});formSide="Left";S.editId=null;S.editTime=null;S.editMins=null;}
-function saveBottle(){const ml=document.getElementById("f-ml").value;const d=new Date(document.getElementById("f-time").value);if(S.editId){S.logs=S.logs.filter(l=>l.id!==S.editId);}addEntry({date:toDate(d),time:toTime(d),formulaAmount:formBottleType==="formula"?ml+" mL":"",breastMilkAmount:formBottleType==="breastmilk"?ml+" mL":""});formBottleType="breastmilk";S.editId=null;S.editTime=null;S.editMl=null;}
-function savePump(){const ml=document.getElementById("f-pump").value;const d=new Date(document.getElementById("f-time").value);if(S.editId){S.logs=S.logs.filter(l=>l.id!==S.editId);}addEntry({date:toDate(d),time:toTime(d),pumpAmount:ml+" mL"});S.editId=null;S.editTime=null;S.editPump=null;}
+function saveDiaper(){if(!formPee&&!formPoop)return;const d=new Date(document.getElementById("f-time").value);if(S.editId)S.logs=S.logs.filter(l=>l.id!==S.editId);const entry={date:toDate(d),time:toTime(d),pee:formPee?"X":"",poop:formPoop?"X":""};if(formStoolColor)entry.stoolColor=formStoolColor;addEntry(entry);formPee=false;formPoop=false;formStoolColor="";S.editId=null;S.editTime=null;}
+function saveBreast(){const mins=document.getElementById("f-mins").value;const d=new Date(document.getElementById("f-time").value);if(S.editId)S.logs=S.logs.filter(l=>l.id!==S.editId);addEntry({date:toDate(d),time:toTime(d),breastLength:mins+" min",side:formSide});formSide="Left";S.editId=null;S.editTime=null;S.editMins=null;}
+function saveBottle(){const ml=document.getElementById("f-ml").value;const d=new Date(document.getElementById("f-time").value);if(S.editId)S.logs=S.logs.filter(l=>l.id!==S.editId);addEntry({date:toDate(d),time:toTime(d),formulaAmount:formBottleType==="formula"?ml+" mL":"",breastMilkAmount:formBottleType==="breastmilk"?ml+" mL":""});formBottleType="breastmilk";S.editId=null;S.editTime=null;S.editMl=null;}
+function savePump(){const ml=document.getElementById("f-pump").value;const d=new Date(document.getElementById("f-time").value);if(S.editId)S.logs=S.logs.filter(l=>l.id!==S.editId);if(S.pumpStorage){S.storageTimers.push({type:S.pumpStorage,ml:+ml,started:Date.now()});saveStorage();}addEntry({date:toDate(d),time:toTime(d),pumpAmount:ml+" mL"});S.editId=null;S.editTime=null;S.editPump=null;S.pumpStorage="";}
+// Init
 render();syncFromSheet();if(S.pendingWrites.length>0)flushPending();
+// Live timer update
+setInterval(()=>{const el=document.querySelector(".feed-timer");if(el){const f=getLastFeedInfo();if(f){el.className="feed-timer "+(f.cls||"");el.innerHTML=`Last ${f.type} <span class="time-val">${f.text}</span> ago`;}}},60000);
+// Storage timer update
+setInterval(()=>{if(S.storageTimers.length>0)render();},300000);
 </script>
 </body>
 </html>
