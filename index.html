@@ -97,6 +97,13 @@ h1,h2,h3,h4{font-family:var(--font-h);font-weight:400}
 .confirm-btns button{padding:10px 22px;border-radius:999px;font-size:14px;font-weight:700}
 .empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px;background:#ffffff88;border-radius:var(--radius)}
 .show-more{display:block;margin:8px auto;padding:8px 20px;border-radius:999px;color:var(--accent);font-size:14px;font-family:var(--font-h)}
+.deleted-section{margin-top:24px;padding-top:16px;border-top:1px solid var(--divider)}
+.deleted-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;padding:8px 2px;font-size:13px;font-weight:600;color:var(--mutedLight)}
+.deleted-entry{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;margin-bottom:6px;background:#eee7db;opacity:.6}
+.deleted-entry .info{flex:1}
+.deleted-entry .sum{font-size:13px;font-weight:600;color:var(--muted)}
+.deleted-entry .time{font-size:11px;color:var(--mutedLight);margin-top:2px}
+.restore-btn{padding:6px 12px;border-radius:999px;font-size:11px;font-weight:600;background:var(--accent2);color:#fff;flex-shrink:0}
 
 .modal-bg{position:fixed;inset:0;background:rgba(32,30,29,.45);display:flex;align-items:flex-end;justify-content:center;z-index:50}
 .modal{width:100%;max-width:480px;max-height:85vh;overflow-y:auto;background:var(--surfaceLight);border-radius:var(--radius) var(--radius) 0 0;padding:22px 20px 28px;box-shadow:0 -12px 32px rgba(32,30,29,.22)}
@@ -108,7 +115,7 @@ h1,h2,h3,h4{font-family:var(--font-h);font-weight:400}
 <div id="app"></div>
 <script>
 const SCRIPT_URL="https://script.google.com/macros/s/AKfycbyKhhzpzd7kcYYuWquEimol3DFPIiav44dwwH0RREujfyOO9-QWLGm6dIr84FjByrC6/exec";
-const S={logs:JSON.parse(localStorage.getItem("bl-logs")||"[]"),form:null,syncing:false,confirmDel:null,showCount:5,pendingWrites:JSON.parse(localStorage.getItem("bl-pending")||"[]"),selectedDay:null,selectedRange:null,dayExpanded:false,ctxMenu:null,ctxX:0,ctxY:0,editId:null,editTime:null,editMins:null,editMl:null,editPump:null};
+const S={logs:JSON.parse(localStorage.getItem("bl-logs")||"[]"),form:null,syncing:false,confirmDel:null,showCount:5,pendingWrites:JSON.parse(localStorage.getItem("bl-pending")||"[]"),selectedDay:null,selectedRange:null,dayExpanded:false,ctxMenu:null,ctxX:0,ctxY:0,editId:null,editTime:null,editMins:null,editMl:null,editPump:null,recentlyDeleted:JSON.parse(localStorage.getItem("bl-deleted")||"[]"),showDeleted:false};
 function save(){localStorage.setItem("bl-logs",JSON.stringify(S.logs))}
 function savePending(){localStorage.setItem("bl-pending",JSON.stringify(S.pendingWrites))}
 function toDate(d){return `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`}
@@ -130,7 +137,30 @@ S.logs=[...localOnly,...newFromSheet];sortLogs();save();}catch(e){console.error(
 async function writeToSheet(entry){S.pendingWrites.push(entry);savePending();render();flushPending();}
 async function flushPending(){while(S.pendingWrites.length>0){const entry=S.pendingWrites[0];try{const p=new URLSearchParams({action:"add",date:entry.date||"",timeOfDay:entry.time||"",breastLength:entry.breastLength||"",formulaAmount:entry.formulaAmount||"",breastMilkAmount:entry.breastMilkAmount||"",side:entry.side||"",pee:entry.pee||"",poop:entry.poop||"",pumpAmount:entry.pumpAmount||""});const r=await fetch(SCRIPT_URL+"?"+p.toString());if(r.ok){S.pendingWrites.shift();savePending();render();}else break;}catch{break;}}}
 function addEntry(entry){entry.displayType=classify(entry);entry.id=Date.now().toString();S.logs.unshift(entry);sortLogs();save();S.form=null;render();writeToSheet(entry);}
-function deleteEntry(id){S.logs=S.logs.filter(l=>l.id!==id);save();S.confirmDel=null;render();}
+function deleteEntry(id){
+  const e=S.logs.find(l=>l.id===id);
+  if(e){
+    e.deletedAt=new Date().toISOString();
+    S.recentlyDeleted.unshift(e);
+    if(S.recentlyDeleted.length>20)S.recentlyDeleted=S.recentlyDeleted.slice(0,20);
+    localStorage.setItem("bl-deleted",JSON.stringify(S.recentlyDeleted));
+    // Delete from sheet
+    deleteFromSheet(e);
+  }
+  S.logs=S.logs.filter(l=>l.id!==id);save();S.confirmDel=null;render();
+}
+async function deleteFromSheet(e){
+  try{const p=new URLSearchParams({action:"delete",date:e.date||"",timeOfDay:e.time||""});
+  await fetch(SCRIPT_URL+"?"+p.toString());}catch(err){console.error("Sheet delete:",err);}
+}
+function saveDeleted(){localStorage.setItem("bl-deleted",JSON.stringify(S.recentlyDeleted));}
+function restoreEntry(idx){
+  const e=S.recentlyDeleted.splice(idx,1)[0];if(!e)return;
+  delete e.deletedAt;e.synced=false;e.fromSheet=false;e.id=Date.now().toString();
+  S.logs.unshift(e);sortLogs();save();saveDeleted();
+  writeToSheet(e);render();
+}
+function clearAllDeleted(){S.recentlyDeleted=[];saveDeleted();render();}
 
 const EC={diaper:{accent:"var(--diaper-accent)",bg:"var(--diaper-bg)",fg:"var(--diaper-fg)"},breast:{accent:"var(--nurse-accent)",bg:"var(--nurse-bg)",fg:"var(--nurse-fg)"},formula:{accent:"var(--bottle-accent)",bg:"var(--bottle-bg)",fg:"var(--bottle-fg)"},breastmilk:{accent:"var(--bottle-accent)",bg:"var(--bottle-bg)",fg:"var(--bottle-fg)"},pump:{accent:"var(--pump-accent)",bg:"var(--pump-bg)",fg:"var(--pump-fg)"},other:{accent:"var(--mutedLight)",bg:"#eee7db",fg:"var(--muted)"}};
 function sumText(e){if(e.displayType==="diaper"){const p=[];if(e.pee)p.push("💧 Pee");if(e.poop)p.push("💩 Poop");return p.join(" + ");}if(e.displayType==="breast")return `🤱 ${e.side||"?"} · ${e.breastLength}`;if(e.displayType==="formula")return `🍼 Formula · ${e.formulaAmount}`;if(e.displayType==="breastmilk")return `🍼 Breast Milk · ${e.breastMilkAmount}`;if(e.displayType==="pump")return `🥛 Pumped · ${e.pumpAmount}`;return "📝 Feeding";}
@@ -214,9 +244,24 @@ function parseEditTime(e){try{const tp=e.time.match(/(\d+):(\d+)\s*(AM|PM)?/i);i
 
 async function resyncEntry(id){S.ctxMenu=null;const e=S.logs.find(l=>l.id===id);if(!e)return;
   e.resyncing=true;render();
-  try{const p=new URLSearchParams({action:"add",date:e.date||"",timeOfDay:e.time||"",breastLength:e.breastLength||"",formulaAmount:e.formulaAmount||"",breastMilkAmount:e.breastMilkAmount||"",side:e.side||"",pee:e.pee||"",poop:e.poop||"",pumpAmount:e.pumpAmount||""});
-  const r=await fetch(SCRIPT_URL+"?"+p.toString());
-  if(r.ok){e.synced=true;}}catch(err){console.error("Resync:",err);}
+  try{
+    const r=await fetch(SCRIPT_URL);
+    if(!r.ok)throw new Error("fetch failed");
+    const data=await r.json();
+    const eKey=x=>[x.date||"",x.time||"",x.displayType||classify(x)].join("|");
+    const myKey=eKey(e);
+    const sheetEntries=data.map(row=>{
+      const s={date:row["Today's Date"]||"",time:row["Time of Day"]||"",breastLength:row["Length of Breast Feeding"]||"",formulaAmount:row["Formula Amount"]||"",breastMilkAmount:row["Breast Milk Amount"]||"",side:row["Right Side/Left Side"]||"",pee:row["Pee"]||"",poop:row["Poop"]||"",pumpAmount:row["Pump Amount"]||""};
+      if(s.date.includes("1899"))s.date="";if(s.time.includes("1899"))s.time="";s.displayType=classify(s);return s;
+    });
+    const found=sheetEntries.some(s=>eKey(s)===myKey);
+    if(found){e.synced=true;}
+    else{
+      const p=new URLSearchParams({action:"add",date:e.date||"",timeOfDay:e.time||"",breastLength:e.breastLength||"",formulaAmount:e.formulaAmount||"",breastMilkAmount:e.breastMilkAmount||"",side:e.side||"",pee:e.pee||"",poop:e.poop||"",pumpAmount:e.pumpAmount||""});
+      const wr=await fetch(SCRIPT_URL+"?"+p.toString());
+      if(wr.ok){e.synced=true;}
+    }
+  }catch(err){console.error("Resync:",err);}
   e.resyncing=false;save();render();}
 
 function renderForm(){const iso=S.editTime||toISO(new Date());const isEdit=!!S.editId;const editLabel=isEdit?"Update":"Save";
@@ -264,6 +309,20 @@ function renderDayModal(){
   return `<div class="modal-bg" onclick="closeDay()"><div class="modal" onclick="event.stopPropagation()"><div style="display:flex;align-items:center;margin-bottom:16px"><div class="modal-title" style="flex:1">${title}</div><button class="modal-close" onclick="closeDay()">✕</button></div>${stats}${historyBtn}${entries}</div></div>`;
 }
 
+function renderDeletedSection(){
+  const chevron=S.showDeleted?"▴":"▾";
+  let h=`<div class="deleted-section"><button class="deleted-toggle" onclick="S.showDeleted=!S.showDeleted;render()">🗑️ Recently Deleted (${S.recentlyDeleted.length})<span>${chevron}</span></button>`;
+  if(S.showDeleted){
+    S.recentlyDeleted.forEach((e,i)=>{
+      e.displayType=e.displayType||classify(e);
+      const ago=timeSince(e.date,e.time);
+      h+=`<div class="deleted-entry"><div class="info"><div class="sum">${sumText(e)}</div><div class="time">${e.date} ${e.time}${ago?" · "+ago:""}</div></div><button class="restore-btn" onclick="restoreEntry(${i})">Restore</button></div>`;
+    });
+    h+=`<button onclick="clearAllDeleted()" style="display:block;margin:8px auto;padding:6px 16px;border-radius:999px;font-size:12px;color:#c0392b;background:none;border:1px solid #c0392b">Clear all</button>`;
+  }
+  h+=`</div>`;return h;
+}
+
 function render(){
   const syncLabel=S.syncing?"Syncing...":S.pendingWrites.length>0?`${S.pendingWrites.length} pending`:"Synced";
   const syncBg=S.syncing?"#ffe1d0":"#eee7db";const syncColor=S.syncing?"#8c491a":"var(--muted)";
@@ -278,6 +337,7 @@ function render(){
   h+=`<div class="history-title">History (${S.logs.length})</div>`;
   if(S.logs.length===0&&!S.syncing)h+=`<div class="empty">No logs yet — tap a button above to start</div>`;
   else{S.logs.slice(0,S.showCount).forEach((e,i)=>{h+=renderEntry(e,i);});if(S.logs.length>S.showCount)h+=`<button class="show-more" onclick="showMore()">Show more (${S.logs.length-S.showCount} older)</button>`;}
+  if(S.recentlyDeleted.length>0){h+=renderDeletedSection();}
   h+=renderDayModal();
   h+=renderCtxMenu();
   h+=renderConfirmModal();
