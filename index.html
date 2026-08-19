@@ -304,7 +304,9 @@ function renderSummary(){
   const wet=t.filter(l=>l.pee).length;
   const diapers=t.filter(l=>l.displayType==="diaper").length;
   const wetTarget=Math.min(age,6);
-  const dSlide1=`<div class="num" style="color:var(--diaper-fg)">${diapers}</div><div class="label">diapers today</div>`;
+  const lastDiaper=all.filter(l=>l.displayType==="diaper").sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
+  let dSub="";if(lastDiaper)dSub=`<div class="sub">${timeSince(lastDiaper.date,lastDiaper.time)}</div>`;
+  const dSlide1=`<div class="num" style="color:var(--diaper-fg)">${diapers}</div><div class="label">diapers today</div>${dSub}`;
   const dSlide2=progressBar(wet,wetTarget,null,"wet diapers",`Day ${age} goal: ${wetTarget}+`);
   // Nurse
   const cutoff24=Date.now()-24*3600000;
@@ -317,13 +319,17 @@ function renderSummary(){
   // Bottle
   const bMl=t.filter(l=>l.displayType==="formula"||l.displayType==="breastmilk").reduce((s,l)=>{const m=(l.formulaAmount||l.breastMilkAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);
   let bTarget=60;if(age<=1)bTarget=10;else if(age<=2)bTarget=15;else if(age<=3)bTarget=30;else if(age<=7)bTarget=60;else bTarget=150;
-  const bSlide1=`<div class="num" style="color:var(--bottle-fg)">${(bMl/29.5735).toFixed(1)}<span style="font-size:11px"> oz</span></div><div class="label">bottle today · ${bMl} mL</div>`;
+  const lastBottle=all.filter(l=>l.displayType==="formula"||l.displayType==="breastmilk").sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
+  let bSub="";if(lastBottle)bSub=`<div class="sub">${lastBottle.formulaAmount||lastBottle.breastMilkAmount} · ${timeSince(lastBottle.date,lastBottle.time)}</div>`;
+  const bSlide1=`<div class="num" style="color:var(--bottle-fg)">${(bMl/29.5735).toFixed(1)}<span style="font-size:11px"> oz</span></div><div class="label">bottle today · ${bMl} mL</div>${bSub}`;
   const bSlide2=progressBar(bMl,bTarget,null,"mL today",`Day ${age} target: ~${bTarget} mL`);
   // Pump
   const pMl=t.filter(l=>l.displayType==="pump").reduce((s,l)=>{const m=(l.pumpAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);
   let avg3=0,days3=0;for(let i=1;i<=3;i++){const d=new Date();d.setDate(d.getDate()-i);const dds=toDate(d);const ml=all.filter(l=>l.displayType==="pump"&&l.date===dds).reduce((s,l)=>{const m=(l.pumpAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);if(ml>0){avg3+=ml;days3++;}}avg3=days3>0?Math.round(avg3/days3):0;
   const pTarget=avg3||pMl||100;
-  const pSlide1=`<div class="num" style="color:var(--pump-fg)">${(pMl/29.5735).toFixed(1)}<span style="font-size:11px"> oz</span></div><div class="label">pumped today · ${pMl} mL</div>`;
+  const lastPump=all.filter(l=>l.displayType==="pump").sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0];
+  let pSub="";if(lastPump)pSub=`<div class="sub">${lastPump.pumpAmount} · ${timeSince(lastPump.date,lastPump.time)}</div>`;
+  const pSlide1=`<div class="num" style="color:var(--pump-fg)">${(pMl/29.5735).toFixed(1)}<span style="font-size:11px"> oz</span></div><div class="label">pumped today · ${pMl} mL</div>${pSub}`;
   const pSlide2=progressBar(pMl,pTarget,null,"mL today",avg3?`3-day avg: ${avg3} mL`:"Keep pumping!");
   // Feeding score
   const fs=getFeedingScore();
@@ -335,7 +341,7 @@ function renderSummary(){
     ${swipeCard("var(--nurse-bg)",ns.color,"S.statusModal='nurse';render()",nSlide1,nSlide2)}
     ${swipeCard("var(--bottle-bg)",bs.color,"S.statusModal='bottle';render()",bSlide1,bSlide2)}
     ${swipeCard("var(--pump-bg)",ps.color,"S.statusModal='pump';render()",pSlide1,pSlide2)}
-  </div><div class="summary"><div class="s-card" style="background:#fff8ee"><div class="status-dot ${fs.color}" onclick="S.statusModal='feeding';render()"></div><div class="s-card-scroll"><div class="s-card-slide">${fsSlide1}</div><div class="s-card-slide">${fsSlide2}</div></div><div class="dots"><span class="active"></span><span></span></div></div></div>`;
+  </div><div class="summary" style="grid-template-columns:1fr"><div class="s-card" style="background:#fff8ee;width:100%"><div class="status-dot ${fs.color}" onclick="S.statusModal='feeding';render()"></div><div class="s-card-scroll"><div class="s-card-slide">${fsSlide1}</div><div class="s-card-slide">${fsSlide2}</div></div><div class="dots"><span class="active"></span><span></span></div></div></div>`;
 }
 function renderChart(){const dow=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];const counts=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const ds=toDate(d);counts.push({ds,count:S.logs.filter(l=>l.date===ds).length,isToday:i===0,dow:d.getDay()});}const mx=Math.max(1,...counts.map(c=>c.count));let bars="";counts.forEach(c=>{const sel=S.selectedDay===c.ds;const pct=c.count===0?4:Math.round((c.count/mx)*100);bars+=`<button class="chart-bar-wrap" onclick="openDay('${c.ds}')"><div style="width:100%;max-width:26px;border-radius:8px 8px 3px 3px;background:${sel?"var(--accent)":c.isToday?"#d67f48":"#f6a06b"};height:${pct}%;min-height:4px"></div><span style="font-size:9px;color:${sel?"var(--accent)":c.isToday?"#8c491a":"var(--mutedLight)"};font-weight:${c.isToday||sel?"700":"400"}">${dow[c.dow]}</span></button>`;});return `<div class="chart-wrap"><div style="display:flex;align-items:center;gap:6px;margin-bottom:12px"><span style="font-size:13px;font-weight:600;flex:1">Last 7 days</span><button onclick="openYesterday()" style="padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;background:#eee7db;color:var(--muted)">Yesterday</button><button onclick="openLast12h()" style="padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;background:#eee7db;color:var(--muted)">Last 12h</button></div><div style="display:flex;align-items:flex-end;gap:8px;height:70px">${bars}</div></div>`;}
 function renderMilestones(){const ms=getMilestones();let items="";ms.items.forEach(m=>{items+=`<div class="m-item"><div class="m-check${m.done?" done":""}">${m.done?"✓":""}</div><div>${m.text}</div></div>`;});return `<div class="milestones"><button class="milestone-toggle" onclick="S.showMilestones=!S.showMilestones;render()">📋 Day ${ms.age} Milestones <span>${S.showMilestones?"▴":"▾"}</span></button>${S.showMilestones?items:""}</div>`;}
