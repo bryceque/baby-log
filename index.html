@@ -129,8 +129,8 @@ function renderSummary(){
   return `<div class="summary">
     <div class="s-card" style="background:var(--diaper-bg)"><div class="num" style="color:var(--diaper-fg)">${diapers}</div><div class="label">diapers today</div>${dSub}</div>
     <div class="s-card" style="background:var(--nurse-bg)"><div class="num" style="color:var(--nurse-fg)">${nBig}</div><div class="label">last side</div>${nSub}</div>
-    <div class="s-card" style="background:var(--bottle-bg)"><div class="num" style="color:var(--bottle-fg)">${bMl}<span style="font-size:11px"> mL</span></div><div class="label">bottle today</div>${bSub}</div>
-    <div class="s-card" style="background:var(--pump-bg)"><div class="num" style="color:var(--pump-fg)">${pMl}<span style="font-size:11px"> mL</span></div><div class="label">pumped today</div>${pSub}</div>
+    <div class="s-card" style="background:var(--bottle-bg)"><div class="num" style="color:var(--bottle-fg)">${bMl}<span style="font-size:11px"> mL</span></div><div class="label">bottle today · ${(bMl/29.5735).toFixed(1)} oz</div>${bSub}</div>
+    <div class="s-card" style="background:var(--pump-bg)"><div class="num" style="color:var(--pump-fg)">${pMl}<span style="font-size:11px"> mL</span></div><div class="label">pumped today · ${(pMl/29.5735).toFixed(1)} oz</div>${pSub}</div>
   </div>`;
 }
 
@@ -177,8 +177,8 @@ function renderDayModal(){
   let stats=`<div class="summary">
     <div class="s-card" style="background:var(--diaper-bg)"><div class="num" style="color:var(--diaper-fg)">${diapers}</div><div class="label">diapers (${wet}💧 ${dirty}💩)</div></div>
     <div class="s-card" style="background:var(--nurse-bg)"><div class="num" style="color:var(--nurse-fg)">${nurseMin}<span style="font-size:11px">min</span></div><div class="label">${nurseEntries.length} sessions</div></div>
-    <div class="s-card" style="background:var(--bottle-bg)"><div class="num" style="color:var(--bottle-fg)">${bottleMl}<span style="font-size:11px">mL</span></div><div class="label">${bottleEntries.length} feeds</div></div>
-    <div class="s-card" style="background:var(--pump-bg)"><div class="num" style="color:var(--pump-fg)">${pumpMl}<span style="font-size:11px">mL</span></div><div class="label">${pumpEntries.length} sessions</div></div>
+    <div class="s-card" style="background:var(--bottle-bg)"><div class="num" style="color:var(--bottle-fg)">${bottleMl}<span style="font-size:11px">mL</span></div><div class="label">${bottleEntries.length} feeds · ${(bottleMl/29.5735).toFixed(1)} oz</div></div>
+    <div class="s-card" style="background:var(--pump-bg)"><div class="num" style="color:var(--pump-fg)">${pumpMl}<span style="font-size:11px">mL</span></div><div class="label">${pumpEntries.length} sessions · ${(pumpMl/29.5735).toFixed(1)} oz</div></div>
   </div>`;
   let entries="";
   const reversed=dayLogs.slice().reverse();
