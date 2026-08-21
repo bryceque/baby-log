@@ -38,10 +38,12 @@ h1,h2,h3,h4{font-family:var(--font-h);font-weight:400}
 .header .age{font-size:11px;color:var(--mutedLight);margin-top:2px}
 .badge{display:inline-block;margin-top:6px;font-size:11px;font-weight:600;padding:4px 12px;border-radius:999px}
 .call-btn{position:absolute;right:4px;top:16px;width:36px;height:36px;border-radius:50%;background:#eee7db;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:var(--shadow)}
-.feed-timer{text-align:center;padding:10px;margin-bottom:14px;border-radius:16px;background:#ffffff88;font-size:14px;font-weight:600}
-.feed-timer .time-val{font-family:var(--font-h);font-size:18px}
+.feed-timer{display:flex;gap:10px;margin-bottom:14px}
+.feed-timer .ft-item{flex:1;text-align:center;padding:10px 6px;border-radius:16px;background:#ffffff88}
+.feed-timer .ft-time{font-family:var(--font-h);font-size:18px}
+.feed-timer .ft-label{font-size:11px;color:var(--muted);margin-top:2px}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
-.feed-timer.warn{color:var(--yellow)}.feed-timer.danger{color:var(--red);animation:pulse 2s infinite}
+.ft-warn .ft-time{color:var(--yellow)}.ft-danger .ft-time{color:var(--red)}.ft-danger{animation:pulse 2s infinite}
 .summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .s-card{border-radius:var(--radius);position:relative;overflow:hidden}
 .s-card-scroll{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;position:relative;z-index:1}
@@ -234,14 +236,21 @@ function getFeedingScore(){
   return {count:ct,ml,color};
 }
 // Last feed timer
+function fmtMins(totalMins){if(totalMins<1)return "just now";if(totalMins<60)return Math.floor(totalMins)+"m";const h=Math.floor(totalMins/60),m=Math.floor(totalMins%60);return h+"h "+m+"m";}
 function getLastFeedInfo(){
   const feeds=S.logs.filter(l=>l.displayType==="breast"||l.displayType==="formula"||l.displayType==="breastmilk").sort((a,b)=>parseEntryDate(b)-parseEntryDate(a));
   if(!feeds.length)return null;
-  const ms=Date.now()-parseEntryDate(feeds[0]);
-  const mins=Math.floor(ms/60000);
-  const h=Math.floor(mins/60),m=mins%60;
-  let cls="";if(mins>=180)cls="danger";else if(mins>=120)cls="warn";
-  return {text:`${h}h ${m}m`,cls,type:feeds[0].displayType==="breast"?"nursed":"bottle fed"};
+  const mins=(Date.now()-parseEntryDate(feeds[0]))/60000;
+  let cls="";if(mins>=180)cls="ft-danger";else if(mins>=120)cls="ft-warn";
+  const emoji=feeds[0].displayType==="breast"?"🤱":"🍼";
+  const label=feeds[0].displayType==="breast"?"Last Nursed":"Last Bottle";
+  return {time:fmtMins(mins),cls,emoji,label};
+}
+function getLastDiaperInfo(){
+  const diapers=S.logs.filter(l=>l.displayType==="diaper").sort((a,b)=>parseEntryDate(b)-parseEntryDate(a));
+  if(!diapers.length)return null;
+  const mins=(Date.now()-parseEntryDate(diapers[0]))/60000;
+  return {time:fmtMins(mins),emoji:"🧷",label:"Last Changed"};
 }
 // Milestones
 function getMilestones(){
@@ -288,7 +297,12 @@ function restoreEntry(idx){const e=S.recentlyDeleted.splice(idx,1)[0];if(!e)retu
 // Render helpers
 function renderSetup(){if(getBirthDate())return "";return `<div class="setup-modal"><div class="setup-box"><h2>👶 Welcome!</h2><p>When was your baby born?</p><input type="date" id="birth-input" value="${new Date().toISOString().slice(0,10)}"><br><button onclick="saveBirth()">Get Started</button></div></div>`;}
 function saveBirth(){const v=document.getElementById("birth-input").value;if(v){setBirthDate(v);render();}}
-function renderFeedTimer(){const f=getLastFeedInfo();if(!f)return `<div class="feed-timer">No feeds logged yet</div>`;return `<div class="feed-timer ${f.cls}">Last ${f.type} <span class="time-val">${f.text}</span> ago</div>`;}
+function renderFeedTimer(){
+  const f=getLastFeedInfo();const d=getLastDiaperInfo();
+  const fHtml=f?`<div class="ft-item ${f.cls}"><div>${f.emoji} <span class="ft-time">${f.time}</span></div><div class="ft-label">${f.label}</div></div>`:`<div class="ft-item"><div class="ft-time">—</div><div class="ft-label">No feeds yet</div></div>`;
+  const dHtml=d?`<div class="ft-item"><div>${d.emoji} <span class="ft-time">${d.time}</span></div><div class="ft-label">${d.label}</div></div>`:`<div class="ft-item"><div class="ft-time">—</div><div class="ft-label">No diapers yet</div></div>`;
+  return `<div class="feed-timer">${fHtml}${dHtml}</div>`;
+}
 function progressBar(current,target,color,label,targetLabel){
   const pct=Math.min(100,Math.round((current/target)*100));
   let fillColor="var(--green)";if(pct<100&&pct>=70)fillColor="var(--yellow)";else if(pct<70)fillColor="var(--red)";
@@ -477,7 +491,7 @@ const origRender=render;
 function renderWithDots(){origRender();document.querySelectorAll(".s-card-scroll").forEach(scroll=>{const dots=scroll.closest(".s-card").querySelector(".dots");if(!dots)return;const spans=dots.querySelectorAll("span");scroll.addEventListener("scroll",()=>{const idx=Math.round(scroll.scrollLeft/scroll.offsetWidth);spans.forEach((s,i)=>{s.className=i===idx?"active":"";});},{passive:true});});}
 render=renderWithDots;render();
 // Live timer update
-setInterval(()=>{const el=document.querySelector(".feed-timer");if(el){const f=getLastFeedInfo();if(f){el.className="feed-timer "+(f.cls||"");el.innerHTML=`Last ${f.type} <span class="time-val">${f.text}</span> ago`;}}},60000);
+setInterval(()=>{const container=document.querySelector(".feed-timer");if(container){const f=getLastFeedInfo();const d=getLastDiaperInfo();const items=container.querySelectorAll(".ft-item");if(items[0]&&f){items[0].className="ft-item "+(f.cls||"");items[0].innerHTML=`<div>${f.emoji} <span class="ft-time">${f.time}</span></div><div class="ft-label">${f.label}</div>`;}if(items[1]&&d){items[1].innerHTML=`<div>${d.emoji} <span class="ft-time">${d.time}</span></div><div class="ft-label">${d.label}</div>`;}}},60000);
 // Storage timer update
 setInterval(()=>{if(S.storageTimers.length>0)render();},300000);
 </script>
