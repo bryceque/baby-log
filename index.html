@@ -301,7 +301,7 @@ function renderFeedTimer(){
   const f=getLastFeedInfo();const d=getLastDiaperInfo();
   const fHtml=f?`<div class="ft-item ${f.cls}"><div>${f.emoji} <span class="ft-time">${f.time}</span></div><div class="ft-label">${f.label}</div></div>`:`<div class="ft-item"><div class="ft-time">—</div><div class="ft-label">No feeds yet</div></div>`;
   const dHtml=d?`<div class="ft-item"><div>${d.emoji} <span class="ft-time">${d.time}</span></div><div class="ft-label">${d.label}</div></div>`:`<div class="ft-item"><div class="ft-time">—</div><div class="ft-label">No diapers yet</div></div>`;
-  return `<div class="feed-timer">${fHtml}${dHtml}</div>`;
+  return `<div class="feed-timer">${dHtml}${fHtml}</div>`;
 }
 function progressBar(current,target,color,label,targetLabel){
   const pct=Math.min(100,Math.round((current/target)*100));
@@ -491,7 +491,7 @@ const origRender=render;
 function renderWithDots(){origRender();document.querySelectorAll(".s-card-scroll").forEach(scroll=>{const dots=scroll.closest(".s-card").querySelector(".dots");if(!dots)return;const spans=dots.querySelectorAll("span");scroll.addEventListener("scroll",()=>{const idx=Math.round(scroll.scrollLeft/scroll.offsetWidth);spans.forEach((s,i)=>{s.className=i===idx?"active":"";});},{passive:true});});}
 render=renderWithDots;render();
 // Live timer update
-setInterval(()=>{const container=document.querySelector(".feed-timer");if(container){const f=getLastFeedInfo();const d=getLastDiaperInfo();const items=container.querySelectorAll(".ft-item");if(items[0]&&f){items[0].className="ft-item "+(f.cls||"");items[0].innerHTML=`<div>${f.emoji} <span class="ft-time">${f.time}</span></div><div class="ft-label">${f.label}</div>`;}if(items[1]&&d){items[1].innerHTML=`<div>${d.emoji} <span class="ft-time">${d.time}</span></div><div class="ft-label">${d.label}</div>`;}}},60000);
+setInterval(()=>{const container=document.querySelector(".feed-timer");if(container){const f=getLastFeedInfo();const d=getLastDiaperInfo();const items=container.querySelectorAll(".ft-item");if(items[0]&&d){items[0].innerHTML=`<div>${d.emoji} <span class="ft-time">${d.time}</span></div><div class="ft-label">${d.label}</div>`;}if(items[1]&&f){items[1].className="ft-item "+(f.cls||"");items[1].innerHTML=`<div>${f.emoji} <span class="ft-time">${f.time}</span></div><div class="ft-label">${f.label}</div>`;}}},60000);
 // Storage timer update
 setInterval(()=>{if(S.storageTimers.length>0)render();},300000);
 </script>
