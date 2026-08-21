@@ -386,21 +386,39 @@ function renderDayModal(){if(!S.selectedDay&&!S.selectedRange)return "";let dayL
   const age=babyAgeDays();
   const diapers=dayLogs.filter(l=>l.displayType==="diaper").length;
   const wet=dayLogs.filter(l=>l.pee).length;const dirty=dayLogs.filter(l=>l.poop).length;
+  const wetTarget=Math.min(Math.max(age,1),6);
   const ne=dayLogs.filter(l=>l.displayType==="breast");
   const nm=ne.reduce((s,l)=>s+(parseInt(l.breastLength)||0),0);
   const be=dayLogs.filter(l=>l.displayType==="formula"||l.displayType==="breastmilk");
   const bm=be.reduce((s,l)=>{const m=(l.formulaAmount||l.breastMilkAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);
+  let bTarget=60;if(age<=1)bTarget=10;else if(age<=2)bTarget=15;else if(age<=3)bTarget=30;else if(age<=7)bTarget=60;else bTarget=150;
   const pe=dayLogs.filter(l=>l.displayType==="pump");
   const pm=pe.reduce((s,l)=>{const m=(l.pumpAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0);
   const dSt=getDayStatus("diaper",dayLogs,age);
   const nSt=getDayStatus("nurse",dayLogs,age);
   const bSt=getDayStatus("bottle",dayLogs,age);
   const pSt=getDayStatus("pump",dayLogs,age);
+  // Build swipeable cards identical to dashboard
+  const dSlide1=`<div class="num" style="color:var(--diaper-fg)">${diapers}</div><div class="label">diapers</div><div class="sub">${wet} 💧 wet · ${dirty} 💩 dirty</div>`;
+  const dSlide2=progressBar(wet,wetTarget,null,"wet diapers",`Day ${age} goal: ${wetTarget}+`);
+  const nSlide1=`<div class="num" style="color:var(--nurse-fg)">${nm}<span style="font-size:11px"> min</span></div><div class="label">${ne.length} nursing sessions</div>`;
+  const nSlide2=progressBar(ne.length,8,null,"sessions","Goal: 8-12 feeds");
+  const bSlide1=`<div class="num" style="color:var(--bottle-fg)">${(bm/29.5735).toFixed(1)}<span style="font-size:11px"> oz</span></div><div class="label">${be.length} bottle feeds</div><div class="sub">${bm} mL</div>`;
+  const bSlide2=progressBar(bm,bTarget,null,"mL",`Day ${age} target: ~${bTarget} mL`);
+  const pSlide1=`<div class="num" style="color:var(--pump-fg)">${(pm/29.5735).toFixed(1)}<span style="font-size:11px"> oz</span></div><div class="label">${pe.length} pump sessions</div><div class="sub">${pm} mL</div>`;
+  const pSlide2=progressBar(pm,pm||100,null,"mL pumped","");
+  const totalFeeds=ne.length+be.length;
+  const fColor=totalFeeds>=8?"green":totalFeeds>=6?"yellow":"red";
+  const fSlide1=`<div class="num" style="color:var(--accent)">${totalFeeds}</div><div class="label">total feeds${bm>0?" · "+bm+" mL bottle":""}</div>`;
+  const fSlide2=progressBar(totalFeeds,8,null,"feeds","Goal: 8-12 feeds");
+
   let stats=`<div class="summary">
-    <div class="s-card" style="background:var(--diaper-bg)"><button class="status-dot ${dSt}"></button><div class="s-card-slide"><div class="num" style="color:var(--diaper-fg)">${diapers}</div><div class="label">diapers</div><div class="sub">${wet} 💧 wet · ${dirty} 💩 dirty</div></div></div>
-    <div class="s-card" style="background:var(--nurse-bg)"><button class="status-dot ${nSt}"></button><div class="s-card-slide"><div class="num" style="color:var(--nurse-fg)">${nm}<span style="font-size:11px"> min</span></div><div class="label">${ne.length} nursing sessions</div></div></div>
-    <div class="s-card" style="background:var(--bottle-bg)"><button class="status-dot ${bSt}"></button><div class="s-card-slide"><div class="num" style="color:var(--bottle-fg)">${(bm/29.5735).toFixed(1)}<span style="font-size:11px"> oz</span></div><div class="label">${be.length} bottle feeds</div><div class="sub">${bm} mL</div></div></div>
-    <div class="s-card" style="background:var(--pump-bg)"><button class="status-dot ${pSt}"></button><div class="s-card-slide"><div class="num" style="color:var(--pump-fg)">${(pm/29.5735).toFixed(1)}<span style="font-size:11px"> oz</span></div><div class="label">${pe.length} pump sessions</div><div class="sub">${pm} mL</div></div></div>
+    ${swipeCard("var(--diaper-bg)",dSt,"S.statusModal='diaper';render()",dSlide1,dSlide2)}
+    ${swipeCard("var(--nurse-bg)",nSt,"S.statusModal='nurse';render()",nSlide1,nSlide2)}
+    ${swipeCard("var(--bottle-bg)",bSt,"S.statusModal='bottle';render()",bSlide1,bSlide2)}
+    ${swipeCard("var(--pump-bg)",pSt,"S.statusModal='pump';render()",pSlide1,pSlide2)}
+  </div><div class="summary" style="grid-template-columns:1fr">
+    ${swipeCard("#fff8ee",fColor,"S.statusModal='feeding';render()",fSlide1,fSlide2)}
   </div>`;
   let entries="";if(S.dayExpanded){dayLogs.slice().reverse().forEach(e=>{const c=EC[e.displayType]||EC.other;entries+=`<div class="entry" style="background:${c.bg};border-color:${c.accent}"><div class="info"><div class="sum" style="font-size:13px">${sumText(e)}</div></div><div style="font-size:11px;color:var(--muted)">${e.time}</div></div>`;});}
   const hb=dayLogs.length>0?`<button onclick="toggleDayExpand()" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 4px;border-top:1px solid var(--divider);font-size:14px;font-weight:600;color:var(--text);background:none;border-bottom:none;border-left:none;border-right:none;cursor:pointer">Full history (${dayLogs.length})<span>${S.dayExpanded?"▴":"▾"}</span></button>`:"<div style='text-align:center;padding:20px;color:var(--muted);font-size:13px'>No activity</div>";
