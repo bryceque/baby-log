@@ -227,7 +227,7 @@ const MILESTONES=[
 const S={tab:"home",logs:JSON.parse(localStorage.getItem("bl-logs")||"[]"),form:null,syncing:false,confirmDel:null,showCount:5,pendingWrites:JSON.parse(localStorage.getItem("bl-pending")||"[]"),selectedDay:null,selectedRange:null,dayExpanded:false,ctxMenu:null,ctxX:0,ctxY:0,editId:null,editTime:null,editMins:null,editMl:null,editPump:null,recentlyDeleted:JSON.parse(localStorage.getItem("bl-deleted")||"[]"),showDeleted:false,statusModal:null,callRef:false,showMilestones:true,storageTimers:JSON.parse(localStorage.getItem("bl-storage")||"[]"),nurseTimer:JSON.parse(localStorage.getItem("bl-timer")||"null"),timerDone:null,msFilter:"All",msSearch:"",msAchieved:JSON.parse(localStorage.getItem("bl-ms")||"{}"),msDetailId:null,msEditId:null,msEditVal:null,hFilter:"all",hWeek:0,hShowCount:15};
 function getBirthDate(){return localStorage.getItem("babyBirthDate")}
 function setBirthDate(d){localStorage.setItem("babyBirthDate",d)}
-function babyAgeDays(){const b=getBirthDate();if(!b)return 0;return Math.max(0,Math.floor((new Date()-new Date(b+"T00:00:00"))/86400000));}
+function babyAgeDays(){const b=getBirthDate();if(!b)return 0;const bd=new Date(b+"T12:00:00");const now=new Date();const today=new Date(now.getFullYear(),now.getMonth(),now.getDate(),12,0,0);return Math.max(0,Math.round((today-bd)/86400000));}
 function save(){localStorage.setItem("bl-logs",JSON.stringify(S.logs))}
 function savePending(){localStorage.setItem("bl-pending",JSON.stringify(S.pendingWrites))}
 function saveStorage(){localStorage.setItem("bl-storage",JSON.stringify(S.storageTimers))}
@@ -236,16 +236,47 @@ function toDate(d){return `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`}
 function toTime(d){const h=d.getHours(),m=d.getMinutes().toString().padStart(2,"0");return `${h%12||12}:${m} ${h>=12?"PM":"AM"}`}
 function toISO(d){return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16)}
 function fmtMins(t){if(t<1)return "just now";if(t<60)return Math.floor(t)+"m";return Math.floor(t/60)+"h "+Math.floor(t%60)+"m";}
-function timeSince(ds,ts){if(!ts||!ds)return "";try{const tp=ts.match(/(\d+):(\d+)\s*(AM|PM)?/i);if(!tp)return "";let h=+tp[1];const m=+tp[2],ap=(tp[3]||"").toUpperCase();if(ap==="PM"&&h!==12)h+=12;if(ap==="AM"&&h===12)h=0;const dp=ds.split("/");const d=new Date(+dp[2],+dp[0]-1,+dp[1],h,m);if(isNaN(d))return "";const mins=Math.floor((Date.now()-d)/60000);if(mins<0)return "";if(mins<1)return "just now";if(mins<60)return mins+"m ago";const hrs=Math.floor(mins/60);if(hrs<24)return hrs+"h "+(mins%60)+"m ago";return Math.floor(hrs/24)+"d ago";}catch{return "";}}
-function parseEntryDate(e){if(!e.date||!e.time)return 0;try{const tp=e.time.match(/(\d+):(\d+)\s*(AM|PM)?/i);if(!tp)return 0;let h=+tp[1];const m=+tp[2],ap=(tp[3]||"").toUpperCase();if(ap==="PM"&&h!==12)h+=12;if(ap==="AM"&&h===12)h=0;const dp=e.date.split("/");return new Date(+dp[2],+dp[0]-1,+dp[1],h,m).getTime();}catch{return 0;}}
+function parseDate(ds,ts){
+  if(!ds||!ts)return null;
+  try{
+    // Parse time
+    const tp=ts.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+    if(!tp)return null;
+    let h=+tp[1];const mn=+tp[2],ap=(tp[3]||"").toUpperCase();
+    if(ap==="PM"&&h!==12)h+=12;
+    if(ap==="AM"&&h===12)h=0;
+    // Parse date - handle M/D/YYYY, YYYY-MM-DD, MM/DD/YYYY
+    let yr,mo,dy;
+    if(ds.includes("-")){const p=ds.split("-");yr=+p[0];mo=+p[1]-1;dy=+p[2];}
+    else if(ds.includes("/")){const p=ds.split("/");if(+p[0]>31){yr=+p[0];mo=+p[1]-1;dy=+p[2];}else{mo=+p[0]-1;dy=+p[1];yr=+p[2];}}
+    else return null;
+    if(!yr||isNaN(mo)||!dy)return null;
+    const d=new Date(yr,mo,dy,h,mn);
+    if(isNaN(d.getTime()))return null;
+    return d;
+  }catch{return null;}
+}
+function timeSince(ds,ts){
+  const d=parseDate(ds,ts);if(!d)return "";
+  const mins=Math.floor((Date.now()-d.getTime())/60000);
+  if(mins<0)return "";if(mins<1)return "just now";
+  if(mins<60)return mins+"m ago";
+  const hrs=Math.floor(mins/60);
+  if(hrs<24)return hrs+"h "+(mins%60)+"m ago";
+  return Math.floor(hrs/24)+"d ago";
+}
+function parseEntryDate(e){const d=parseDate(e.date,e.time);return d?d.getTime():0;}
 function sortLogs(){S.logs.sort((a,b)=>parseEntryDate(b)-parseEntryDate(a));}
+// Ensure all entries have displayType on load
+S.logs.forEach(e=>{if(!e.displayType)e.displayType=classify(e);});
+sortLogs();
 function classify(e){if(e.pee||e.poop)return "diaper";if(e.breastLength)return "breast";if(e.formulaAmount)return "formula";if(e.breastMilkAmount)return "breastmilk";if(e.pumpAmount)return "pump";return "other";}
 const EC={diaper:{accent:"var(--diaper-accent)",bg:"var(--diaper-bg)",fg:"var(--diaper-fg)"},breast:{accent:"var(--nurse-accent)",bg:"var(--nurse-bg)",fg:"var(--nurse-fg)"},formula:{accent:"var(--bottle-accent)",bg:"var(--bottle-bg)",fg:"var(--bottle-fg)"},breastmilk:{accent:"var(--bottle-accent)",bg:"var(--bottle-bg)",fg:"var(--bottle-fg)"},pump:{accent:"var(--pump-accent)",bg:"var(--pump-bg)",fg:"var(--pump-fg)"},other:{accent:"var(--mutedLight)",bg:"#eee7db",fg:"var(--muted)"}};
 function sumText(e){if(e.displayType==="diaper"){const p=[];if(e.pee)p.push("💧 Pee");if(e.poop)p.push("💩 Poop");let t=p.join(" + ");const sc=e.stoolColor||(e.poop&&e.poop.includes(" - ")?e.poop.split(" - ")[1]:"");if(sc)t+=" ("+sc+")";return t;}if(e.displayType==="breast")return `🤱 ${e.side||"?"} · ${e.breastLength}`;if(e.displayType==="formula")return `🍼 Formula · ${e.formulaAmount}`;if(e.displayType==="breastmilk")return `🍼 Breast Milk · ${e.breastMilkAmount}`;if(e.displayType==="pump")return `🥛 Pumped · ${e.pumpAmount}`;return "📝 Entry";}
 function dedupKey(e){return [(e.date||"").trim(),(e.time||"").replace(/\s+/g," ").trim(),e.displayType||classify(e)].join("|");}
 function dedup(){const seen=new Map(),keep=[];for(const e of S.logs){const k=dedupKey(e);if(!seen.has(k)){seen.set(k,e);keep.push(e);}else{const ex=seen.get(k);if(!ex.synced&&!ex.fromSheet&&(e.synced||e.fromSheet)){const i=keep.indexOf(ex);if(i>=0){keep[i]=e;seen.set(k,e);}}}}S.logs=keep;}
 // STATUS LOGIC (compact)
-function getStatus(type){const today=toDate(new Date()),age=babyAgeDays(),hr=new Date().getHours(),all=S.logs,t=all.filter(l=>l.date===today);
+function getStatus(type){const today=toDate(new Date()),age=babyAgeDays(),hr=new Date().getHours(),all=S.logs.filter(l=>parseEntryDate(l)>0),t=all.filter(l=>l.date===today);
 if(type==="diaper"){const wet=t.filter(l=>l.pee).length,target=Math.min(Math.max(age,1),6);const g=`Kaiser: ≥${target} wet diapers on day ${age}`;if(wet>=target+1)return{color:"green",label:"On Track",reason:`${wet} wet diapers — above target`,guideline:g,action:""};if(wet>=target)return{color:"yellow",label:"Borderline",reason:`${wet} wet — exactly at minimum`,guideline:g,action:"Keep feeding regularly"};if(hr>=18||wet===0&&hr>=12)return{color:"red",label:"Needs Attention",reason:`Only ${wet} wet diapers`,guideline:g,action:"Call your baby's doctor"};return{color:"yellow",label:"Monitor",reason:`${wet} wet — target ${target}`,guideline:g,action:"Feed frequently"};}
 if(type==="nurse"){const c24=Date.now()-864e5,ct=all.filter(l=>l.displayType==="breast"&&parseEntryDate(l)>=c24).length,last=all.filter(l=>l.displayType==="breast").sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0],lh=last?(Date.now()-parseEntryDate(last))/36e5:99;const g="Kaiser: 8-12 feeds/24h, every 2-3h";if(lh>=4)return{color:"red",label:"Overdue",reason:`${Math.floor(lh)}h since last feed`,guideline:g,action:"Feed baby soon"};if(ct<6)return{color:"red",label:"Low",reason:`${ct} sessions/24h`,guideline:g,action:"Increase frequency"};if(lh>=3||ct<8)return{color:"yellow",label:"Monitor",reason:`${ct} sessions, last ${Math.floor(lh)}h ago`,guideline:g,action:"Offer a feed"};return{color:"green",label:"On Track",reason:`${ct} sessions/24h`,guideline:g,action:""};}
 if(type==="bottle"){const feeds=t.filter(l=>l.displayType==="formula"||l.displayType==="breastmilk"),ml=feeds.reduce((s,l)=>{const m=(l.formulaAmount||l.breastMilkAmount||"").match(/(\d+)/);return s+(m?+m[1]:0);},0),last=all.filter(l=>l.displayType==="formula"||l.displayType==="breastmilk").sort((a,b)=>parseEntryDate(b)-parseEntryDate(a))[0],lh=last?(Date.now()-parseEntryDate(last))/36e5:99;let exp="2-10";if(age>=4)exp="30-60";else if(age>=3)exp="15-30";else if(age>=2)exp="5-15";const g=`Kaiser: ${exp} mL/feed day ${age}`;if(feeds.length===0&&t.filter(l=>l.displayType==="breast").length>0)return{color:"green",label:"Breastfeeding",reason:"Nursing is primary",guideline:"",action:""};if(lh>=4)return{color:"red",label:"Overdue",reason:`${Math.floor(lh)}h since last bottle`,guideline:g,action:"Feed baby"};if(lh>=3)return{color:"yellow",label:"Monitor",reason:`${Math.floor(lh)}h since last`,guideline:g,action:"Consider a feed"};return{color:"green",label:"On Track",reason:`${ml} mL today`,guideline:g,action:""};}
